@@ -118,11 +118,12 @@ class EntityFormState extends State<EntityForm> {
     setState(() {
       _saving = false;
       _formError = result.formError;
-      _fieldErrors = result.fieldErrors;
-      _generation++;
+      _fieldErrors = Map<String, String>.from(result.fieldErrors);
     });
     if (result.formError != null || result.fieldErrors.isNotEmpty) {
-      _formKey.currentState?.validate();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _formKey.currentState?.validate();
+      });
       return;
     }
     _baseline = Map<String, dynamic>.from(_values);
@@ -150,7 +151,10 @@ class EntityFormState extends State<EntityForm> {
   }
 
   void _setValue(String key, dynamic value) {
-    setState(() => _values[key] = value);
+    setState(() {
+      _values[key] = value;
+      _fieldErrors.remove(key);
+    });
     widget.onChanged?.call(Map<String, dynamic>.from(_values));
   }
 
@@ -256,6 +260,7 @@ class EntityFormState extends State<EntityForm> {
         return TextFormField(
           initialValue: '${_values[field.key] ?? ''}',
           readOnly: field.readOnly,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           keyboardType: field.type == EntityFieldType.number
               ? TextInputType.number
               : field.type == EntityFieldType.email
@@ -274,6 +279,7 @@ class EntityFormState extends State<EntityForm> {
         return DropdownButtonFormField<int>(
           initialValue: _values[field.key] as int?,
           isExpanded: true,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(labelText: field.label),
           items: items,
           onChanged: field.readOnly
@@ -291,6 +297,7 @@ class EntityFormState extends State<EntityForm> {
             List<int>.from((_values[field.key] as List?) ?? const []);
         return FormField<List<int>>(
           initialValue: selected,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (v) =>
               _fieldErrors[field.key] ?? field.idsValidator?.call(v),
           builder: (state) {
