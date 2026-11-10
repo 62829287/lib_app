@@ -169,7 +169,18 @@ class _BookListScreenState extends State<BookListScreen> {
 
     return ListView(
       children: [
-        Text('Книги', style: theme.textTheme.headlineSmall),
+        Row(
+          children: [
+            Expanded(
+              child: Text('Книги', style: theme.textTheme.headlineSmall),
+            ),
+            FilledButton.icon(
+              onPressed: () => context.go('/books/new'),
+              icon: const Icon(Icons.add),
+              label: const Text('Добавить'),
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         TextField(
           controller: _searchController,
@@ -427,6 +438,11 @@ class _BookListScreenState extends State<BookListScreen> {
               tooltip: 'Открыть',
               icon: const Icon(Icons.open_in_new, size: 20),
               onPressed: () => context.go('/books/${book.id}'),
+            ),
+            IconButton(
+              tooltip: 'Изменить',
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              onPressed: () => context.go('/books/${book.id}/edit'),
             ),
             if (book.isDeleted)
               IconButton(

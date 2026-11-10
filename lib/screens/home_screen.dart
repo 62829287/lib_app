@@ -6,6 +6,14 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final items = [
+      ('Книги', '/books', Icons.menu_book_outlined),
+      ('Авторы', '/authors', Icons.people_outline),
+      ('Жанры', '/genres', Icons.category_outlined),
+      ('Издательства', '/publishers', Icons.business_outlined),
+      ('Читатели', '/readers', Icons.badge_outlined),
+    ];
+
     return ListView(
       children: [
         Text('Библиотека', style: Theme.of(context).textTheme.headlineSmall),
@@ -13,19 +21,15 @@ class HomeScreen extends StatelessWidget {
         Card(
           child: Column(
             children: [
-              ListTile(
-                leading: const Icon(Icons.menu_book_outlined),
-                title: const Text('Книги'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/books'),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.people_outline),
-                title: const Text('Авторы'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.go('/authors'),
-              ),
+              for (var i = 0; i < items.length; i++) ...[
+                ListTile(
+                  leading: Icon(items[i].$3),
+                  title: Text(items[i].$1),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.go(items[i].$2),
+                ),
+                if (i != items.length - 1) const Divider(height: 1),
+              ],
             ],
           ),
         ),

@@ -13,4 +13,8 @@ abstract interface class BookRepository {
   Future<int> softDeleteMany(List<int> ids);
   Future<int> hardDeleteMany(List<int> ids);
   Future<int> restoreMany(List<int> ids);
+  Future<bool> isbnExists(String isbn, {int? excludingId});
+  Future<int> countByPublisher(int publisherId);
+  Future<List<int>> authorIdsLinkedToPublisher(int publisherId);
+  Future<List<int>> genreIdsLinkedToPublisher(int publisherId);
 }

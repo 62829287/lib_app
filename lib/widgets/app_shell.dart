@@ -12,6 +12,9 @@ class AppShell extends StatelessWidget {
     _Section('Обзор', '/', Icons.home_outlined),
     _Section('Книги', '/books', Icons.menu_book_outlined),
     _Section('Авторы', '/authors', Icons.people_outline),
+    _Section('Жанры', '/genres', Icons.category_outlined),
+    _Section('Издательства', '/publishers', Icons.business_outlined),
+    _Section('Читатели', '/readers', Icons.badge_outlined),
   ];
 
   @override

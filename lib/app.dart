@@ -8,42 +8,47 @@ import 'core/scroll_behavior.dart';
 import 'core/theme.dart';
 import 'repositories/author_repository.dart';
 import 'repositories/book_repository.dart';
-import 'repositories/catalog_repository.dart';
-import 'repositories/in_memory_author_repository.dart';
-import 'repositories/in_memory_book_repository.dart';
-import 'repositories/in_memory_catalog_repository.dart';
+import 'repositories/genre_repository.dart';
+import 'repositories/publisher_repository.dart';
+import 'repositories/reader_repository.dart';
 import 'state/author_list_notifier.dart';
 import 'state/book_list_notifier.dart';
 import 'state/catalog_notifier.dart';
+import 'state/genre_list_notifier.dart';
+import 'state/publisher_list_notifier.dart';
+import 'state/reader_list_notifier.dart';
 
 class LibraryApp extends StatelessWidget {
   const LibraryApp({
     super.key,
-    this.bookRepository,
-    this.authorRepository,
-    this.catalogRepository,
+    required this.bookRepository,
+    required this.authorRepository,
+    required this.genreRepository,
+    required this.publisherRepository,
+    required this.readerRepository,
   });
 
-  final BookRepository? bookRepository;
-  final AuthorRepository? authorRepository;
-  final CatalogRepository? catalogRepository;
+  final BookRepository bookRepository;
+  final AuthorRepository authorRepository;
+  final GenreRepository genreRepository;
+  final PublisherRepository publisherRepository;
+  final ReaderRepository readerRepository;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<BookRepository>(
-          create: (_) => bookRepository ?? InMemoryBookRepository(),
-        ),
-        Provider<AuthorRepository>(
-          create: (_) => authorRepository ?? InMemoryAuthorRepository(),
-        ),
-        Provider<CatalogRepository>(
-          create: (_) => catalogRepository ?? InMemoryCatalogRepository(),
-        ),
+        Provider<BookRepository>.value(value: bookRepository),
+        Provider<AuthorRepository>.value(value: authorRepository),
+        Provider<GenreRepository>.value(value: genreRepository),
+        Provider<PublisherRepository>.value(value: publisherRepository),
+        Provider<ReaderRepository>.value(value: readerRepository),
         ChangeNotifierProvider(
-          create: (context) =>
-              CatalogNotifier(context.read<CatalogRepository>())..load(),
+          create: (context) => CatalogNotifier(
+            genres: context.read<GenreRepository>(),
+            publishers: context.read<PublisherRepository>(),
+            authors: context.read<AuthorRepository>(),
+          )..load(),
         ),
         ChangeNotifierProvider(
           create: (context) =>
@@ -52,6 +57,18 @@ class LibraryApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) =>
               AuthorListNotifier(context.read<AuthorRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              GenreListNotifier(context.read<GenreRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              PublisherListNotifier(context.read<PublisherRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              ReaderListNotifier(context.read<ReaderRepository>()),
         ),
       ],
       child: const _LibraryMaterialApp(),

@@ -2,14 +2,40 @@ import '../models/author.dart';
 import '../models/book.dart';
 import '../models/genre.dart';
 import '../models/publisher.dart';
+import '../models/library_card.dart';
+import '../models/reader.dart';
 
 const seedGenres = <Genre>[
-  Genre(id: 1, name: 'Роман'),
-  Genre(id: 2, name: 'Фантастика'),
-  Genre(id: 3, name: 'Детектив'),
-  Genre(id: 4, name: 'Поэзия'),
-  Genre(id: 5, name: 'История'),
-  Genre(id: 6, name: 'Научпоп'),
+  Genre(
+    id: 1,
+    name: 'Роман',
+    description: 'Прозаическое повествование с развитым сюжетом и героями',
+  ),
+  Genre(
+    id: 2,
+    name: 'Фантастика',
+    description: 'Произведения о вымышленных мирах, технологиях и будущем',
+  ),
+  Genre(
+    id: 3,
+    name: 'Детектив',
+    description: 'Расследования преступлений и раскрытие загадок',
+  ),
+  Genre(
+    id: 4,
+    name: 'Поэзия',
+    description: 'Стихотворные произведения и лирика',
+  ),
+  Genre(
+    id: 5,
+    name: 'История',
+    description: 'Книги о прошлых событиях, эпохах и исторических личностях',
+  ),
+  Genre(
+    id: 6,
+    name: 'Научпоп',
+    description: 'Популярное изложение научных идей и открытий',
+  ),
 ];
 
 const seedPublishers = <Publisher>[
@@ -357,5 +383,44 @@ const seedBooks = <Book>[
     genreIds: [2],
     copiesTotal: 5,
     copiesAvailable: 4,
+  ),
+];
+
+final seedReaders = <Reader>[
+  Reader(
+    id: 1,
+    firstName: 'Сергей',
+    lastName: 'Варичев',
+    email: 'isip_s.v.varichev@mpt.ru',
+    phone: '+7 900 111-22-33',
+    card: LibraryCard(
+      number: 'LC-1001',
+      issuedAt: DateTime(2024, 1, 15),
+      expiresAt: DateTime(2027, 1, 15),
+    ),
+  ),
+  Reader(
+    id: 2,
+    firstName: 'Анри',
+    lastName: 'Газарян',
+    email: 'isip_a.a.gazaryan@mpt.ru',
+    phone: '+7 900 222-33-44',
+    card: LibraryCard(
+      number: 'LC-1002',
+      issuedAt: DateTime(2024, 3, 10),
+      expiresAt: DateTime(2027, 3, 10),
+    ),
+  ),
+  Reader(
+    id: 3,
+    firstName: 'Даниил',
+    lastName: 'Серяк',
+    email: 'd.v.seryak@mpt.ru',
+    phone: '+7 900 333-44-55',
+    card: LibraryCard(
+      number: 'LC-1003',
+      issuedAt: DateTime(2025, 2, 1),
+      expiresAt: DateTime(2028, 2, 1),
+    ),
   ),
 ];

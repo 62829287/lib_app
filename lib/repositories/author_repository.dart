@@ -1,6 +1,6 @@
-import '../models/author.dart';
-import '../models/author_query.dart';
-import '../models/page_result.dart';
+import "../models/author.dart";
+import "../models/author_query.dart";
+import "../models/page_result.dart";
 
 abstract interface class AuthorRepository {
   Future<PageResult<Author>> find(AuthorQuery query);
@@ -13,4 +13,5 @@ abstract interface class AuthorRepository {
   Future<int> softDeleteMany(List<int> ids);
   Future<int> hardDeleteMany(List<int> ids);
   Future<int> restoreMany(List<int> ids);
+  Future<List<Author>> allActive();
 }

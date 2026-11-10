@@ -157,4 +157,44 @@ class InMemoryBookRepository implements BookRepository {
     }
     return count;
   }
+
+  @override
+  Future<bool> isbnExists(String isbn, {int? excludingId}) async {
+    final needle = isbn.trim().toLowerCase();
+    return _books.any(
+      (b) =>
+          !b.isDeleted &&
+          b.isbn.toLowerCase() == needle &&
+          b.id != excludingId,
+    );
+  }
+
+  @override
+  Future<int> countByPublisher(int publisherId) async {
+    return _books
+        .where((b) => !b.isDeleted && b.publisherId == publisherId)
+        .length;
+  }
+
+  @override
+  Future<List<int>> authorIdsLinkedToPublisher(int publisherId) async {
+    final ids = <int>{};
+    for (final b in _books) {
+      if (!b.isDeleted && b.publisherId == publisherId) {
+        ids.addAll(b.authorIds);
+      }
+    }
+    return ids.toList()..sort();
+  }
+
+  @override
+  Future<List<int>> genreIdsLinkedToPublisher(int publisherId) async {
+    final ids = <int>{};
+    for (final b in _books) {
+      if (!b.isDeleted && b.publisherId == publisherId) {
+        ids.addAll(b.genreIds);
+      }
+    }
+    return ids.toList()..sort();
+  }
 }

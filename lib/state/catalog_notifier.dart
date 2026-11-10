@@ -2,13 +2,23 @@ import 'package:flutter/foundation.dart';
 
 import '../models/genre.dart';
 import '../models/publisher.dart';
-import '../repositories/catalog_repository.dart';
+import '../repositories/author_repository.dart';
+import '../repositories/genre_repository.dart';
+import '../repositories/publisher_repository.dart';
 import 'load_status.dart';
 
 class CatalogNotifier extends ChangeNotifier {
-  CatalogNotifier(this._repository);
+  CatalogNotifier({
+    required GenreRepository genres,
+    required PublisherRepository publishers,
+    required AuthorRepository authors,
+  })  : _genresRepo = genres,
+        _publishersRepo = publishers,
+        _authorsRepo = authors;
 
-  final CatalogRepository _repository;
+  final GenreRepository _genresRepo;
+  final PublisherRepository _publishersRepo;
+  final AuthorRepository _authorsRepo;
 
   LoadStatus _status = LoadStatus.idle;
   List<Genre> _genres = const [];
@@ -43,13 +53,18 @@ class CatalogNotifier extends ChangeNotifier {
 
     try {
       final results = await Future.wait([
-        _repository.genres(),
-        _repository.publishers(),
-        _repository.authorCountries(),
+        _genresRepo.allActive(),
+        _publishersRepo.allActive(),
+        _authorsRepo.allActive(),
       ]);
       _genres = results[0] as List<Genre>;
       _publishers = results[1] as List<Publisher>;
-      _countries = results[2] as List<String>;
+      final authors = results[2] as List;
+      _countries = authors
+          .map((a) => a.country as String)
+          .toSet()
+          .toList()
+        ..sort();
       _status = LoadStatus.success;
     } catch (e) {
       _error = e.toString();

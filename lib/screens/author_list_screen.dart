@@ -136,7 +136,18 @@ class _AuthorListScreenState extends State<AuthorListScreen> {
 
     return ListView(
       children: [
-        Text("Авторы", style: theme.textTheme.headlineSmall),
+        Row(
+          children: [
+            Expanded(
+              child: Text("Авторы", style: theme.textTheme.headlineSmall),
+            ),
+            FilledButton.icon(
+              onPressed: () => context.go("/authors/new"),
+              icon: const Icon(Icons.add),
+              label: const Text("Добавить"),
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         TextField(
           controller: _searchController,
@@ -340,6 +351,11 @@ class _AuthorListScreenState extends State<AuthorListScreen> {
               tooltip: "Открыть",
               icon: const Icon(Icons.open_in_new, size: 20),
               onPressed: () => context.go("/authors/${author.id}"),
+            ),
+            IconButton(
+              tooltip: "Изменить",
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              onPressed: () => context.go("/authors/${author.id}/edit"),
             ),
             if (author.isDeleted)
               IconButton(

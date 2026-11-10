@@ -53,8 +53,8 @@ class EntityTable<T> extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minWidth: MediaQuery.sizeOf(context).width > 600
-                ? MediaQuery.sizeOf(context).width - 320
-                : 720,
+                ? MediaQuery.sizeOf(context).width - 280
+                : (showActions ? 980 : 720),
           ),
           child: DataTable(
             showCheckboxColumn: showSelect,

@@ -146,4 +146,8 @@ class InMemoryAuthorRepository implements AuthorRepository {
     }
     return count;
   }
+
+  @override
+  Future<List<Author>> allActive() async =>
+      _authors.where((a) => !a.isDeleted).toList();
 }
