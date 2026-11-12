@@ -7,16 +7,16 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      ('Книги', '/books', Icons.menu_book_outlined),
-      ('Авторы', '/authors', Icons.people_outline),
-      ('Жанры', '/genres', Icons.category_outlined),
-      ('Издательства', '/publishers', Icons.business_outlined),
-      ('Читатели', '/readers', Icons.badge_outlined),
+      ('Сборки', '/builds', Icons.construction_outlined),
+      ('Про-игроки', '/pros', Icons.sports_esports_outlined),
+      ('Роли', '/roles', Icons.category_outlined),
+      ('Герои', '/heroes', Icons.shield_outlined),
+      ('Пользователи', '/users', Icons.person_outline),
     ];
 
     return ListView(
       children: [
-        Text('Библиотека', style: Theme.of(context).textTheme.headlineSmall),
+        Text('Dota Builds', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
         Card(
           child: Column(

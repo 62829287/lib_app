@@ -3,23 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../screens/author_detail_screen.dart';
-import '../screens/author_form_screen.dart';
-import '../screens/author_list_screen.dart';
-import '../screens/book_detail_screen.dart';
-import '../screens/book_form_screen.dart';
-import '../screens/book_list_screen.dart';
-import '../screens/genre_detail_screen.dart';
-import '../screens/genre_form_screen.dart';
-import '../screens/genre_list_screen.dart';
+import '../screens/app_user_detail_screen.dart';
+import '../screens/app_user_form_screen.dart';
+import '../screens/app_user_list_screen.dart';
+import '../screens/build_detail_screen.dart';
+import '../screens/build_form_screen.dart';
+import '../screens/build_list_screen.dart';
+import '../screens/hero_detail_screen.dart';
+import '../screens/hero_form_screen.dart';
+import '../screens/hero_list_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/not_found_screen.dart';
-import '../screens/publisher_detail_screen.dart';
-import '../screens/publisher_form_screen.dart';
-import '../screens/publisher_list_screen.dart';
-import '../screens/reader_detail_screen.dart';
-import '../screens/reader_form_screen.dart';
-import '../screens/reader_list_screen.dart';
+import '../screens/pro_player_detail_screen.dart';
+import '../screens/pro_player_form_screen.dart';
+import '../screens/pro_player_list_screen.dart';
+import '../screens/role_detail_screen.dart';
+import '../screens/role_form_screen.dart';
+import '../screens/role_list_screen.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/form_exit_scope.dart';
 
@@ -42,28 +42,28 @@ GoRouter createRouter() {
             builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
-            path: '/books',
-            name: 'books',
-            builder: (context, state) => const BookListScreen(),
+            path: '/builds',
+            name: 'builds',
+            builder: (context, state) => const BuildListScreen(),
             routes: [
               GoRoute(
                 path: 'new',
-                name: 'book-new',
+                name: 'build-new',
                 onExit: _confirmFormExit,
-                builder: (context, state) => const BookFormScreen(),
+                builder: (context, state) => const BuildFormScreen(),
               ),
               GoRoute(
                 path: ':id',
-                name: 'book',
-                builder: (context, state) => BookDetailScreen(
+                name: 'build',
+                builder: (context, state) => BuildDetailScreen(
                   id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    name: 'book-edit',
+                    name: 'build-edit',
                     onExit: _confirmFormExit,
-                    builder: (context, state) => BookFormScreen(
+                    builder: (context, state) => BuildFormScreen(
                       id: int.tryParse(state.pathParameters['id'] ?? ''),
                     ),
                   ),
@@ -72,28 +72,28 @@ GoRouter createRouter() {
             ],
           ),
           GoRoute(
-            path: '/authors',
-            name: 'authors',
-            builder: (context, state) => const AuthorListScreen(),
+            path: '/pros',
+            name: 'pros',
+            builder: (context, state) => const ProPlayerListScreen(),
             routes: [
               GoRoute(
                 path: 'new',
-                name: 'author-new',
+                name: 'pro-new',
                 onExit: _confirmFormExit,
-                builder: (context, state) => const AuthorFormScreen(),
+                builder: (context, state) => const ProPlayerFormScreen(),
               ),
               GoRoute(
                 path: ':id',
-                name: 'author',
-                builder: (context, state) => AuthorDetailScreen(
+                name: 'pro',
+                builder: (context, state) => ProPlayerDetailScreen(
                   id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    name: 'author-edit',
+                    name: 'pro-edit',
                     onExit: _confirmFormExit,
-                    builder: (context, state) => AuthorFormScreen(
+                    builder: (context, state) => ProPlayerFormScreen(
                       id: int.tryParse(state.pathParameters['id'] ?? ''),
                     ),
                   ),
@@ -102,28 +102,28 @@ GoRouter createRouter() {
             ],
           ),
           GoRoute(
-            path: '/genres',
-            name: 'genres',
-            builder: (context, state) => const GenreListScreen(),
+            path: '/roles',
+            name: 'roles',
+            builder: (context, state) => const RoleListScreen(),
             routes: [
               GoRoute(
                 path: 'new',
-                name: 'genre-new',
+                name: 'role-new',
                 onExit: _confirmFormExit,
-                builder: (context, state) => const GenreFormScreen(),
+                builder: (context, state) => const RoleFormScreen(),
               ),
               GoRoute(
                 path: ':id',
-                name: 'genre',
-                builder: (context, state) => GenreDetailScreen(
+                name: 'role',
+                builder: (context, state) => RoleDetailScreen(
                   id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    name: 'genre-edit',
+                    name: 'role-edit',
                     onExit: _confirmFormExit,
-                    builder: (context, state) => GenreFormScreen(
+                    builder: (context, state) => RoleFormScreen(
                       id: int.tryParse(state.pathParameters['id'] ?? ''),
                     ),
                   ),
@@ -132,28 +132,28 @@ GoRouter createRouter() {
             ],
           ),
           GoRoute(
-            path: '/publishers',
-            name: 'publishers',
-            builder: (context, state) => const PublisherListScreen(),
+            path: '/heroes',
+            name: 'heroes',
+            builder: (context, state) => const HeroListScreen(),
             routes: [
               GoRoute(
                 path: 'new',
-                name: 'publisher-new',
+                name: 'hero-new',
                 onExit: _confirmFormExit,
-                builder: (context, state) => const PublisherFormScreen(),
+                builder: (context, state) => const HeroFormScreen(),
               ),
               GoRoute(
                 path: ':id',
-                name: 'publisher',
-                builder: (context, state) => PublisherDetailScreen(
+                name: 'hero',
+                builder: (context, state) => HeroDetailScreen(
                   id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    name: 'publisher-edit',
+                    name: 'hero-edit',
                     onExit: _confirmFormExit,
-                    builder: (context, state) => PublisherFormScreen(
+                    builder: (context, state) => HeroFormScreen(
                       id: int.tryParse(state.pathParameters['id'] ?? ''),
                     ),
                   ),
@@ -162,28 +162,28 @@ GoRouter createRouter() {
             ],
           ),
           GoRoute(
-            path: '/readers',
-            name: 'readers',
-            builder: (context, state) => const ReaderListScreen(),
+            path: '/users',
+            name: 'users',
+            builder: (context, state) => const AppUserListScreen(),
             routes: [
               GoRoute(
                 path: 'new',
-                name: 'reader-new',
+                name: 'user-new',
                 onExit: _confirmFormExit,
-                builder: (context, state) => const ReaderFormScreen(),
+                builder: (context, state) => const AppUserFormScreen(),
               ),
               GoRoute(
                 path: ':id',
-                name: 'reader',
-                builder: (context, state) => ReaderDetailScreen(
+                name: 'user',
+                builder: (context, state) => AppUserDetailScreen(
                   id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
                 ),
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    name: 'reader-edit',
+                    name: 'user-edit',
                     onExit: _confirmFormExit,
-                    builder: (context, state) => ReaderFormScreen(
+                    builder: (context, state) => AppUserFormScreen(
                       id: int.tryParse(state.pathParameters['id'] ?? ''),
                     ),
                   ),

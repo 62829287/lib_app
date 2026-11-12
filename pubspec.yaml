@@ -1,5 +1,5 @@
 name: library_app
-description: Веб-каталог библиотеки — фильтрация, сортировка и пагинация книг и авторов.
+description: Каталог сборок Dota
 publish_to: 'none'
 version: 1.0.0+1
 

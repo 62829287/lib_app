@@ -1,11 +1,11 @@
 {
-    "name": "library_app",
-    "short_name": "library_app",
+    "name": "Dota Builds",
+    "short_name": "Dota Builds",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Каталог сборок Dota 2 — герои, роли, про-игроки и пользователи",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

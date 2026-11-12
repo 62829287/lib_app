@@ -10,11 +10,11 @@ class AppShell extends StatelessWidget {
 
   static const List<_Section> _sections = [
     _Section('Обзор', '/', Icons.home_outlined),
-    _Section('Книги', '/books', Icons.menu_book_outlined),
-    _Section('Авторы', '/authors', Icons.people_outline),
-    _Section('Жанры', '/genres', Icons.category_outlined),
-    _Section('Издательства', '/publishers', Icons.business_outlined),
-    _Section('Читатели', '/readers', Icons.badge_outlined),
+    _Section('Сборки', '/builds', Icons.construction_outlined),
+    _Section('Про-игроки', '/pros', Icons.sports_esports_outlined),
+    _Section('Роли', '/roles', Icons.category_outlined),
+    _Section('Герои', '/heroes', Icons.shield_outlined),
+    _Section('Пользователи', '/users', Icons.person_outline),
   ];
 
   @override
@@ -25,7 +25,7 @@ class AppShell extends StatelessWidget {
 
     if (compact) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Библиотека')),
+        appBar: AppBar(title: const Text('Dota Builds')),
         drawer: NavigationDrawer(
           selectedIndex: selected,
           onDestinationSelected: (index) {

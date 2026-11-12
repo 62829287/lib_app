@@ -4,11 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'repositories/json_store.dart';
-import 'repositories/persistent_author_repository.dart';
-import 'repositories/persistent_book_repository.dart';
-import 'repositories/persistent_genre_repository.dart';
-import 'repositories/persistent_publisher_repository.dart';
-import 'repositories/persistent_reader_repository.dart';
+import 'repositories/persistent_app_user_repository.dart';
+import 'repositories/persistent_build_repository.dart';
+import 'repositories/persistent_hero_repository.dart';
+import 'repositories/persistent_pro_player_repository.dart';
+import 'repositories/persistent_role_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,19 +18,19 @@ Future<void> main() async {
   final store = JsonStore(prefs);
   store.ensureVersion();
 
-  final books = PersistentBookRepository(store)..loadFromStorage();
-  final authors = PersistentAuthorRepository(store)..loadFromStorage();
-  final genres = PersistentGenreRepository(store, books: books)..loadFromStorage();
-  final publishers = PersistentPublisherRepository(store)..loadFromStorage();
-  final readers = PersistentReaderRepository(store)..loadFromStorage();
+  final builds = PersistentBuildRepository(store)..loadFromStorage();
+  final proPlayers = PersistentProPlayerRepository(store)..loadFromStorage();
+  final roles = PersistentRoleRepository(store, builds: builds)..loadFromStorage();
+  final heroes = PersistentHeroRepository(store)..loadFromStorage();
+  final users = PersistentAppUserRepository(store)..loadFromStorage();
 
   runApp(
     LibraryApp(
-      bookRepository: books,
-      authorRepository: authors,
-      genreRepository: genres,
-      publisherRepository: publishers,
-      readerRepository: readers,
+      buildRepository: builds,
+      proPlayerRepository: proPlayers,
+      roleRepository: roles,
+      heroRepository: heroes,
+      appUserRepository: users,
     ),
   );
 }

@@ -8,18 +8,18 @@ class JsonStore {
   final SharedPreferences _prefs;
 
   static const dataVersion = 2;
-  static const versionKey = 'library_data_version';
+  static const versionKey = 'dota_data_version';
 
   bool ensureVersion() {
-    final current = _prefs.getInt(versionKey) ?? 1;
+    final current = _prefs.getInt(versionKey) ?? 0;
     if (current == dataVersion) return false;
 
     for (final key in [
-      'books_v1',
-      'authors_v1',
-      'genres_v1',
-      'publishers_v1',
-      'readers_v1',
+      'builds_v1',
+      'pro_players_v1',
+      'roles_v1',
+      'heroes_v1',
+      'users_v1',
     ]) {
       _prefs.remove(key);
     }

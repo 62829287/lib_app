@@ -6,69 +6,69 @@ import 'package:provider/provider.dart';
 import 'core/router.dart';
 import 'core/scroll_behavior.dart';
 import 'core/theme.dart';
-import 'repositories/author_repository.dart';
-import 'repositories/book_repository.dart';
-import 'repositories/genre_repository.dart';
-import 'repositories/publisher_repository.dart';
-import 'repositories/reader_repository.dart';
-import 'state/author_list_notifier.dart';
-import 'state/book_list_notifier.dart';
+import 'repositories/app_user_repository.dart';
+import 'repositories/build_repository.dart';
+import 'repositories/hero_repository.dart';
+import 'repositories/pro_player_repository.dart';
+import 'repositories/role_repository.dart';
+import 'state/app_user_list_notifier.dart';
+import 'state/build_list_notifier.dart';
 import 'state/catalog_notifier.dart';
-import 'state/genre_list_notifier.dart';
-import 'state/publisher_list_notifier.dart';
-import 'state/reader_list_notifier.dart';
+import 'state/hero_list_notifier.dart';
+import 'state/pro_player_list_notifier.dart';
+import 'state/role_list_notifier.dart';
 
 class LibraryApp extends StatelessWidget {
   const LibraryApp({
     super.key,
-    required this.bookRepository,
-    required this.authorRepository,
-    required this.genreRepository,
-    required this.publisherRepository,
-    required this.readerRepository,
+    required this.buildRepository,
+    required this.proPlayerRepository,
+    required this.roleRepository,
+    required this.heroRepository,
+    required this.appUserRepository,
   });
 
-  final BookRepository bookRepository;
-  final AuthorRepository authorRepository;
-  final GenreRepository genreRepository;
-  final PublisherRepository publisherRepository;
-  final ReaderRepository readerRepository;
+  final BuildRepository buildRepository;
+  final ProPlayerRepository proPlayerRepository;
+  final RoleRepository roleRepository;
+  final HeroRepository heroRepository;
+  final AppUserRepository appUserRepository;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<BookRepository>.value(value: bookRepository),
-        Provider<AuthorRepository>.value(value: authorRepository),
-        Provider<GenreRepository>.value(value: genreRepository),
-        Provider<PublisherRepository>.value(value: publisherRepository),
-        Provider<ReaderRepository>.value(value: readerRepository),
+        Provider<BuildRepository>.value(value: buildRepository),
+        Provider<ProPlayerRepository>.value(value: proPlayerRepository),
+        Provider<RoleRepository>.value(value: roleRepository),
+        Provider<HeroRepository>.value(value: heroRepository),
+        Provider<AppUserRepository>.value(value: appUserRepository),
         ChangeNotifierProvider(
           create: (context) => CatalogNotifier(
-            genres: context.read<GenreRepository>(),
-            publishers: context.read<PublisherRepository>(),
-            authors: context.read<AuthorRepository>(),
+            roles: context.read<RoleRepository>(),
+            heroes: context.read<HeroRepository>(),
+            proPlayers: context.read<ProPlayerRepository>(),
           )..load(),
         ),
         ChangeNotifierProvider(
           create: (context) =>
-              BookListNotifier(context.read<BookRepository>()),
+              BuildListNotifier(context.read<BuildRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) =>
-              AuthorListNotifier(context.read<AuthorRepository>()),
+              ProPlayerListNotifier(context.read<ProPlayerRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) =>
-              GenreListNotifier(context.read<GenreRepository>()),
+              RoleListNotifier(context.read<RoleRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) =>
-              PublisherListNotifier(context.read<PublisherRepository>()),
+              HeroListNotifier(context.read<HeroRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) =>
-              ReaderListNotifier(context.read<ReaderRepository>()),
+              AppUserListNotifier(context.read<AppUserRepository>()),
         ),
       ],
       child: const _LibraryMaterialApp(),
@@ -89,7 +89,7 @@ class _LibraryMaterialAppState extends State<_LibraryMaterialApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Библиотека',
+      title: 'Dota Builds',
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       themeMode: ThemeMode.light,
