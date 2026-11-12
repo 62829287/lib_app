@@ -52,6 +52,9 @@ class PersistentBuildRepository implements BuildRepository {
     if (q.heroId != null) {
       rows = rows.where((b) => b.heroId == q.heroId).toList();
     }
+    if (q.proPlayerId != null) {
+      rows = rows.where((b) => b.proPlayerIds.contains(q.proPlayerId)).toList();
+    }
     if (q.difficultyFrom != null) {
       rows = rows.where((b) => b.difficulty >= q.difficultyFrom!).toList();
     }
