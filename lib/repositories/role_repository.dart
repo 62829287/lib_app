@@ -15,4 +15,5 @@ abstract interface class RoleRepository {
   Future<int> restoreMany(List<int> ids);
   Future<List<Role>> allActive();
   Future<int> countBuildsUsing(int roleId);
+  void invalidateCatalogCache();
 }

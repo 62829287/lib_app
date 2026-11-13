@@ -10,6 +10,7 @@ import '../models/pro_player_query.dart';
 import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
 import '../state/pro_player_list_notifier.dart';
+import '../widgets/api_feedback.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/entity_table.dart';
 import '../widgets/pagination_bar.dart';
@@ -66,7 +67,10 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
         notifier.query.sortAscending != query.sortAscending ||
         notifier.query.includeDeleted != query.includeDeleted ||
         notifier.status == LoadStatus.idle) {
-      notifier.applyQuery(query);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        notifier.applyQuery(query);
+      });
     }
   }
 
@@ -124,7 +128,9 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                   'Игрок «${player.nickname}» будет стёрт без восстановления.',
               confirmLabel: 'Стереть',
             );
-            if (ok) await n.hardDelete(player.id);
+            if (ok && context.mounted) {
+              await runApiAction(context, () => n.hardDelete(player.id));
+            }
           },
         ),
       ],
@@ -138,6 +144,10 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
     final catalog = context.watch<CatalogNotifier>();
     final query = notifier.query;
     final useCards = useCardListOf(context);
+
+    if (notifier.status == LoadStatus.success) {
+      catalog.recoverIfNeeded();
+    }
 
     return ListView(
       children: [
@@ -253,7 +263,8 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                   title: 'Удалить навсегда?',
                   message: 'Физическое удаление',
                   confirmLabel: 'Стереть')) {
-                await n.hardDeleteSelected();
+                if (!context.mounted) return;
+                await runApiAction(context, n.hardDeleteSelected);
               }
             },
             icon: const Icon(Icons.delete_forever_outlined),
@@ -280,7 +291,10 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
       case LoadStatus.error:
         return ErrorView(
           message: notifier.error ?? '',
-          onRetry: notifier.load,
+          onRetry: () {
+            context.read<CatalogNotifier>().load();
+            notifier.load();
+          },
         );
       case LoadStatus.success:
         if (notifier.result.items.isEmpty) {
@@ -317,7 +331,11 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                                 title: 'Удалить навсегда?',
                                 message: 'Игрок «${p.nickname}»',
                                 confirmLabel: 'Стереть')) {
-                              await notifier.hardDelete(p.id);
+                              if (!context.mounted) return;
+                              await runApiAction(
+                                context,
+                                () => notifier.hardDelete(p.id),
+                              );
                             }
                           case 'restore':
                             await notifier.restore(p.id);

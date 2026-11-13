@@ -14,7 +14,7 @@ class TableColumnSpec<T> {
   });
 }
 
-class EntityTable<T> extends StatelessWidget {
+class EntityTable<T> extends StatefulWidget {
   final List<TableColumnSpec<T>> columns;
   final List<T> items;
   final int Function(T item) idOf;
@@ -41,14 +41,29 @@ class EntityTable<T> extends StatelessWidget {
   });
 
   @override
+  State<EntityTable<T>> createState() => _EntityTableState<T>();
+}
+
+class _EntityTableState<T> extends State<EntityTable<T>> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showSelect = onToggleSelect != null;
-    final showActions = actions != null;
+    final showSelect = widget.onToggleSelect != null;
+    final showActions = widget.actions != null;
 
     return Scrollbar(
+      controller: _scroll,
       thumbVisibility: true,
       child: SingleChildScrollView(
+        controller: _scroll,
         scrollDirection: Axis.horizontal,
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -63,37 +78,41 @@ class EntityTable<T> extends StatelessWidget {
                   const Color(0xFFF2F4F7),
             ),
             columns: [
-              for (final column in columns)
+              for (final column in widget.columns)
                 DataColumn(
                   numeric: column.numeric,
-                  onSort: column.sortField == null || onSort == null
+                  onSort: column.sortField == null || widget.onSort == null
                       ? null
                       : (columnIndex, ascending) =>
-                          onSort!(column.sortField!),
+                          widget.onSort!(column.sortField!),
                   label: _SortHeader(
                     label: column.label,
-                    active: sortField == column.sortField,
-                    ascending: sortAscending,
-                    sortable: column.sortField != null && onSort != null,
+                    active: widget.sortField == column.sortField,
+                    ascending: widget.sortAscending,
+                    sortable:
+                        column.sortField != null && widget.onSort != null,
                   ),
                 ),
               if (showActions)
                 const DataColumn(label: Text('Действия')),
             ],
             rows: [
-              for (final item in items)
+              for (final item in widget.items)
                 DataRow(
-                  selected: selected.contains(idOf(item)),
+                  selected: widget.selected.contains(widget.idOf(item)),
                   onSelectChanged: showSelect
-                      ? (_) => onToggleSelect!(idOf(item))
-                      : (onRowTap == null ? null : (_) => onRowTap!(item)),
+                      ? (_) => widget.onToggleSelect!(widget.idOf(item))
+                      : (widget.onRowTap == null
+                          ? null
+                          : (_) => widget.onRowTap!(item)),
                   cells: [
-                    for (final column in columns) DataCell(column.build(item)),
+                    for (final column in widget.columns)
+                      DataCell(column.build(item)),
                     if (showActions)
                       DataCell(
                         Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: actions!(item),
+                          children: widget.actions!(item),
                         ),
                       ),
                   ],

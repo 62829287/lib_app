@@ -7,8 +7,10 @@ import 'package:provider/provider.dart';
 import '../core/breakpoints.dart';
 import '../models/list_query.dart';
 import '../models/role.dart';
+import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
 import '../state/role_list_notifier.dart';
+import '../widgets/api_feedback.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/entity_table.dart';
 import '../widgets/pagination_bar.dart';
@@ -34,7 +36,11 @@ class _RoleListScreenState extends State<RoleListScreen> {
     _last = uri.toString();
     final q = ListQuery.fromQueryParameters(uri.queryParameters);
     if (_search.text != q.search) _search.text = q.search;
-    context.read<RoleListNotifier>().applyQuery(q);
+    final notifier = context.read<RoleListNotifier>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      notifier.applyQuery(q);
+    });
   }
 
   @override
@@ -59,7 +65,9 @@ class _RoleListScreenState extends State<RoleListScreen> {
       message: 'Роль «${role.name}» будет стёрта без восстановления.',
       confirmLabel: 'Стереть',
     );
-    if (ok) await n.hardDelete(role.id);
+    if (ok && mounted) {
+      await runApiAction(context, () => n.hardDelete(role.id));
+    }
   }
 
   List<Widget> _rowActions(Role role, RoleListNotifier n) {
@@ -182,7 +190,8 @@ class _RoleListScreenState extends State<RoleListScreen> {
                   title: 'Удалить навсегда?',
                   message: 'Физическое удаление',
                   confirmLabel: 'Стереть')) {
-                await n.hardDeleteSelected();
+                if (!context.mounted) return;
+                await runApiAction(context, n.hardDeleteSelected);
               }
             },
             icon: const Icon(Icons.delete_forever_outlined),
@@ -203,7 +212,13 @@ class _RoleListScreenState extends State<RoleListScreen> {
       case LoadStatus.loading:
         return const LoadingView();
       case LoadStatus.error:
-        return ErrorView(message: n.error ?? '', onRetry: n.load);
+        return ErrorView(
+          message: n.error ?? '',
+          onRetry: () {
+            context.read<CatalogNotifier>().load();
+            n.load();
+          },
+        );
       case LoadStatus.success:
         if (n.result.items.isEmpty) {
           return const EmptyView(message: 'Роли не найдены');

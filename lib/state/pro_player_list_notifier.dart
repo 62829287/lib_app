@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/api_exceptions.dart';
 import '../models/page_result.dart';
 import '../models/pro_player.dart';
 import '../models/pro_player_query.dart';
@@ -37,6 +38,11 @@ class ProPlayerListNotifier extends ChangeNotifier {
     try {
       _result = await _repository.find(_query);
       _status = LoadStatus.success;
+    } on RequestCancelledException {
+      return;
+    } on ApiException catch (e) {
+      _error = e.message;
+      _status = LoadStatus.error;
     } catch (e) {
       _error = 'Не удалось загрузить список: $e';
       _status = LoadStatus.error;

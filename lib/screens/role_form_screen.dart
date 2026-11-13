@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/validators.dart';
 import '../models/role.dart';
 import '../repositories/role_repository.dart';
 import '../state/role_list_notifier.dart';
@@ -47,23 +46,17 @@ class _RoleFormScreenState extends State<RoleFormScreen> {
             'name': r?.name ?? '',
             'description': r?.description ?? '',
           },
-          fields: [
+          fields: const [
             EntityFieldSpec(
               key: 'name',
               label: 'Название',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Название'),
-                (x) => Validators.maxLength(x, 80, label: 'Название'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'description',
               label: 'Описание',
               type: EntityFieldType.multiline,
               maxLines: 3,
-              stringValidator: (v) =>
-                  Validators.maxLength(v, 500, label: 'Описание'),
             ),
           ],
           onSubmit: (values) async {

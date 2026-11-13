@@ -7,9 +7,10 @@ import 'package:provider/provider.dart';
 import '../core/breakpoints.dart';
 import '../models/dota_hero.dart';
 import '../models/list_query.dart';
-import '../repositories/build_repository.dart';
+import '../state/catalog_notifier.dart';
 import '../state/hero_list_notifier.dart';
 import '../state/load_status.dart';
+import '../widgets/api_feedback.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/entity_table.dart';
 import '../widgets/pagination_bar.dart';
@@ -35,7 +36,11 @@ class _HeroListScreenState extends State<HeroListScreen> {
     _last = uri.toString();
     final q = ListQuery.fromQueryParameters(uri.queryParameters);
     if (_search.text != q.search) _search.text = q.search;
-    context.read<HeroListNotifier>().applyQuery(q);
+    final notifier = context.read<HeroListNotifier>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      notifier.applyQuery(q);
+    });
   }
 
   @override
@@ -53,44 +58,14 @@ class _HeroListScreenState extends State<HeroListScreen> {
     );
   }
 
-  Future<bool> _ensureCanDelete(int id) async {
-    final count = await context.read<BuildRepository>().countByHero(id);
-    if (count == 0) return true;
-    if (!mounted) return false;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Удаление невозможно'),
-        content: Text(
-          'На героя ссылаются $count сборок. Сначала отвяжите или удалите эти сборки.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Понятно'),
-          ),
-        ],
-      ),
-    );
-    return false;
-  }
-
   Future<void> _deleteSelected({required bool soft}) async {
     final notifier = context.read<HeroListNotifier>();
-    final ids = soft
-        ? notifier.selectedItems
-            .where((e) => !e.isDeleted)
-            .map((e) => e.id)
-            .toList()
-        : notifier.selected.toList();
-
-    for (final id in ids) {
-      if (!await _ensureCanDelete(id)) return;
-    }
-
-    if (!mounted) return;
     final ok = soft
-        ? await confirmAction(context, title: 'В корзину?', message: 'Логическое удаление')
+        ? await confirmAction(
+            context,
+            title: 'В корзину?',
+            message: 'Логическое удаление',
+          )
         : await confirmAction(
             context,
             title: 'Удалить навсегда?',
@@ -98,28 +73,28 @@ class _HeroListScreenState extends State<HeroListScreen> {
             confirmLabel: 'Стереть',
           );
     if (!ok) return;
+    if (!mounted) return;
     if (soft) {
       await notifier.softDeleteSelected();
     } else {
-      await notifier.hardDeleteSelected();
+      await runApiAction(context, notifier.hardDeleteSelected);
     }
   }
 
   Future<void> _softDeleteOne(DotaHero hero, HeroListNotifier n) async {
-    if (!await _ensureCanDelete(hero.id)) return;
     await n.softDelete(hero.id);
   }
 
   Future<void> _hardDeleteOne(DotaHero hero, HeroListNotifier n) async {
-    if (!await _ensureCanDelete(hero.id)) return;
-    if (!mounted) return;
     final ok = await confirmAction(
       context,
       title: 'Удалить навсегда?',
       message: 'Герой «${hero.name}» будет стёрт без восстановления.',
       confirmLabel: 'Стереть',
     );
-    if (ok) await n.hardDelete(hero.id);
+    if (ok && mounted) {
+      await runApiAction(context, () => n.hardDelete(hero.id));
+    }
   }
 
   List<Widget> _rowActions(DotaHero hero, HeroListNotifier n) {
@@ -247,7 +222,13 @@ class _HeroListScreenState extends State<HeroListScreen> {
       case LoadStatus.loading:
         return const LoadingView();
       case LoadStatus.error:
-        return ErrorView(message: n.error ?? '', onRetry: n.load);
+        return ErrorView(
+          message: n.error ?? '',
+          onRetry: () {
+            context.read<CatalogNotifier>().load();
+            n.load();
+          },
+        );
       case LoadStatus.success:
         if (n.result.items.isEmpty) {
           return const EmptyView(message: 'Герои не найдены');

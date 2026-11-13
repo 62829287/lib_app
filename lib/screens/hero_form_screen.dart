@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/validators.dart';
 import '../models/dota_hero.dart';
 import '../repositories/hero_repository.dart';
 import '../state/hero_list_notifier.dart';
@@ -48,33 +47,21 @@ class _HeroFormScreenState extends State<HeroFormScreen> {
             'primaryAttribute': h?.primaryAttribute ?? 'Сила',
             'attackType': h?.attackType ?? 'Ближний',
           },
-          fields: [
+          fields: const [
             EntityFieldSpec(
               key: 'name',
               label: 'Имя',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Имя'),
-                (x) => Validators.maxLength(x, 80, label: 'Имя'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'primaryAttribute',
               label: 'Основной атрибут',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Атрибут'),
-                (x) => Validators.maxLength(x, 40, label: 'Атрибут'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'attackType',
               label: 'Тип атаки',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Тип атаки'),
-                (x) => Validators.maxLength(x, 40, label: 'Тип атаки'),
-              ]),
             ),
           ],
           onSubmit: (values) async {

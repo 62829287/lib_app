@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/validators.dart';
 import '../models/app_user.dart';
 import '../models/steam_profile.dart';
 import '../repositories/app_user_repository.dart';
@@ -54,30 +53,21 @@ class _AppUserFormScreenState extends State<AppUserFormScreen> {
             'steamNickname': u?.steam.nickname ?? '',
             'steamRating': '${u?.steam.rating ?? 0}',
           },
-          fields: [
+          fields: const [
             EntityFieldSpec(
               key: 'nickname',
               label: 'Ник',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Ник'),
-                (x) => Validators.maxLength(x, 80, label: 'Ник'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'email',
               label: 'Email',
               type: EntityFieldType.email,
-              stringValidator: Validators.email,
             ),
             EntityFieldSpec(
               key: 'region',
               label: 'Регион',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Регион'),
-                (x) => Validators.maxLength(x, 80, label: 'Регион'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'steamUrl',
@@ -85,10 +75,6 @@ class _AppUserFormScreenState extends State<AppUserFormScreen> {
               type: EntityFieldType.text,
               group: 'steam',
               groupTitle: 'Steam-профиль',
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'URL'),
-                (x) => Validators.maxLength(x, 200, label: 'URL'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'steamNickname',
@@ -96,10 +82,6 @@ class _AppUserFormScreenState extends State<AppUserFormScreen> {
               type: EntityFieldType.text,
               group: 'steam',
               groupTitle: 'Steam-профиль',
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Ник Steam'),
-                (x) => Validators.maxLength(x, 80, label: 'Ник Steam'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'steamRating',
@@ -107,28 +89,19 @@ class _AppUserFormScreenState extends State<AppUserFormScreen> {
               type: EntityFieldType.number,
               group: 'steam',
               groupTitle: 'Steam-профиль',
-              stringValidator: (v) =>
-                  Validators.nonNegativeInt(v, label: 'Рейтинг'),
             ),
           ],
           onSubmit: (values) async {
             final repo = context.read<AppUserRepository>();
-            final email = '${values['email']}'.trim();
-            if (await repo.emailExists(email, excludingId: u?.id)) {
-              return const FormSubmitResult(
-                fieldErrors: {'email': 'Такой email уже зарегистрирован'},
-              );
-            }
-
             final user = AppUser(
               id: u?.id ?? 0,
               nickname: '${values['nickname']}'.trim(),
-              email: email,
+              email: '${values['email']}'.trim(),
               region: '${values['region']}'.trim(),
               steam: SteamProfile(
                 url: '${values['steamUrl']}'.trim(),
                 nickname: '${values['steamNickname']}'.trim(),
-                rating: int.parse('${values['steamRating']}'.trim()),
+                rating: int.tryParse('${values['steamRating']}'.trim()) ?? -1,
               ),
               deletedAt: u?.deletedAt,
             );

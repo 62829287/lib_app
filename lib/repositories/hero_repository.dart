@@ -14,4 +14,5 @@ abstract interface class HeroRepository {
   Future<int> hardDeleteMany(List<int> ids);
   Future<int> restoreMany(List<int> ids);
   Future<List<DotaHero>> allActive();
+  void invalidateCatalogCache();
 }

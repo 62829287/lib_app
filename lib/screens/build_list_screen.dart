@@ -73,7 +73,10 @@ class _BuildListScreenState extends State<BuildListScreen> {
         notifier.query.sortAscending != query.sortAscending ||
         notifier.query.includeDeleted != query.includeDeleted ||
         notifier.status == LoadStatus.idle) {
-      notifier.applyQuery(query);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        notifier.applyQuery(query);
+      });
     }
   }
 
@@ -143,6 +146,10 @@ class _BuildListScreenState extends State<BuildListScreen> {
     final query = notifier.query;
     final useCards = useCardListOf(context);
     final difficulty = _difficultyFilter(query);
+
+    if (notifier.status == LoadStatus.success) {
+      catalog.recoverIfNeeded();
+    }
 
     return ListView(
       children: [
@@ -320,7 +327,10 @@ class _BuildListScreenState extends State<BuildListScreen> {
       case LoadStatus.error:
         return ErrorView(
           message: notifier.error ?? 'Неизвестная ошибка',
-          onRetry: notifier.load,
+          onRetry: () {
+            context.read<CatalogNotifier>().load();
+            notifier.load();
+          },
         );
       case LoadStatus.success:
         if (notifier.result.items.isEmpty) {

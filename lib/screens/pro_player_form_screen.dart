@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/validators.dart';
 import '../models/pro_player.dart';
 import '../repositories/pro_player_repository.dart';
 import '../state/pro_player_list_notifier.dart';
@@ -52,49 +51,31 @@ class _ProPlayerFormScreenState extends State<ProPlayerFormScreen> {
             'rating': '${p?.rating ?? 1000}',
             'country': p?.country ?? 'Россия',
           },
-          fields: [
+          fields: const [
             EntityFieldSpec(
               key: 'nickname',
               label: 'Ник',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Ник'),
-                (x) => Validators.maxLength(x, 80, label: 'Ник'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'realName',
               label: 'Настоящее имя',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Имя'),
-                (x) => Validators.maxLength(x, 80, label: 'Имя'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'team',
               label: 'Команда',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Команда'),
-                (x) => Validators.maxLength(x, 80, label: 'Команда'),
-              ]),
             ),
             EntityFieldSpec(
               key: 'rating',
               label: 'Рейтинг',
               type: EntityFieldType.number,
-              stringValidator: (v) =>
-                  Validators.positiveInt(v, label: 'Рейтинг'),
             ),
             EntityFieldSpec(
               key: 'country',
               label: 'Страна',
               type: EntityFieldType.text,
-              stringValidator: (v) => Validators.combine(v, [
-                (x) => Validators.required(x, label: 'Страна'),
-                (x) => Validators.maxLength(x, 80, label: 'Страна'),
-              ]),
             ),
           ],
           onSubmit: (values) async {
@@ -104,7 +85,7 @@ class _ProPlayerFormScreenState extends State<ProPlayerFormScreen> {
               nickname: '${values['nickname']}'.trim(),
               realName: '${values['realName']}'.trim(),
               team: '${values['team']}'.trim(),
-              rating: int.parse('${values['rating']}'.trim()),
+              rating: int.tryParse('${values['rating']}'.trim()) ?? -1,
               country: '${values['country']}'.trim(),
               deletedAt: p?.deletedAt,
             );

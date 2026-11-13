@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/validators.dart';
 import '../models/build.dart';
 import '../models/dota_hero.dart';
 import '../models/pro_player.dart';
@@ -58,8 +57,16 @@ class _BuildFormScreenState extends State<BuildFormScreen> {
     return FutureBuilder<_Data>(
       future: _future,
       builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const LoadingView();
+        }
+        if (snap.hasError) {
+          return ErrorView(
+            message: '${snap.error}',
+            onRetry: () => setState(() => _future = _load()),
+          );
+        }
         if (!snap.hasData) return const LoadingView();
-        if (snap.hasError) return ErrorView(message: '${snap.error}');
         final data = snap.data!;
         if (widget.isEditing && data.build == null) {
           return const EmptyView(message: 'Сборка не найдена');
@@ -98,7 +105,7 @@ class _BuildFormState extends State<_BuildForm> {
           (widget.data.heroes.isNotEmpty ? widget.data.heroes.first.id : null),
       'proPlayerIds': List<int>.from(b?.proPlayerIds ?? const []),
       'roleIds': List<int>.from(b?.roleIds ?? const []),
-      'picks': '${b?.picks ?? 1}',
+      'picks': '${b?.picks ?? 0}',
       'wins': '${b?.wins ?? 0}',
     };
   }
@@ -109,14 +116,12 @@ class _BuildFormState extends State<_BuildForm> {
     final builds = context.read<BuildRepository>();
     final proIds = await builds.proPlayerIdsLinkedToHero(heroId);
     final roleIds = await builds.roleIdsLinkedToHero(heroId);
+    if (!mounted) return;
     setState(() {
       _proPlayers = proIds.isEmpty
           ? widget.data.proPlayers
-          : widget.data.proPlayers
-              .where((p) => proIds.contains(p.id))
-              .toList();
+          : widget.data.proPlayers.where((p) => proIds.contains(p.id)).toList();
       if (_proPlayers.isEmpty) _proPlayers = widget.data.proPlayers;
-
       _roles = roleIds.isEmpty
           ? widget.data.roles
           : widget.data.roles.where((r) => roleIds.contains(r.id)).toList();
@@ -145,40 +150,25 @@ class _BuildFormState extends State<_BuildForm> {
         _applyCascade(heroId);
       },
       fields: [
-        EntityFieldSpec(
+        const EntityFieldSpec(
           key: 'title',
           label: 'Название',
           type: EntityFieldType.text,
-          stringValidator: (v) => Validators.combine(v, [
-            (x) => Validators.required(x, label: 'Название'),
-            (x) => Validators.maxLength(x, 200, label: 'Название'),
-          ]),
         ),
-        EntityFieldSpec(
+        const EntityFieldSpec(
           key: 'code',
           label: 'Код',
           type: EntityFieldType.text,
-          stringValidator: (v) => Validators.combine(v, [
-            (x) => Validators.required(x, label: 'Код'),
-            (x) => Validators.minLength(x, 4, label: 'Код'),
-            (x) => Validators.maxLength(x, 40, label: 'Код'),
-          ]),
         ),
-        EntityFieldSpec(
+        const EntityFieldSpec(
           key: 'patch',
           label: 'Патч',
           type: EntityFieldType.text,
-          stringValidator: (v) => Validators.combine(v, [
-            (x) => Validators.required(x, label: 'Патч'),
-            (x) => Validators.maxLength(x, 20, label: 'Патч'),
-          ]),
         ),
-        EntityFieldSpec(
+        const EntityFieldSpec(
           key: 'difficulty',
           label: 'Сложность (1–5)',
           type: EntityFieldType.number,
-          stringValidator: (v) =>
-              Validators.intInRange(v, min: 1, max: 5, label: 'Сложность'),
         ),
         EntityFieldSpec(
           key: 'heroId',
@@ -188,7 +178,6 @@ class _BuildFormState extends State<_BuildForm> {
             for (final h in widget.data.heroes)
               DropdownMenuItem(value: h.id, child: Text(h.name)),
           ],
-          idValidator: (v) => Validators.requiredId(v, label: 'героя'),
         ),
         EntityFieldSpec(
           key: 'proPlayerIds',
@@ -197,8 +186,6 @@ class _BuildFormState extends State<_BuildForm> {
           chipItems: () => [
             for (final p in _proPlayers) (id: p.id, label: p.nickname),
           ],
-          idsValidator: (v) =>
-              Validators.requiredIds(v, label: 'про-игрока'),
         ),
         EntityFieldSpec(
           key: 'roleIds',
@@ -207,52 +194,33 @@ class _BuildFormState extends State<_BuildForm> {
           chipItems: () => [
             for (final r in _roles) (id: r.id, label: r.name),
           ],
-          idsValidator: (v) => Validators.requiredIds(v, label: 'роль'),
         ),
-        EntityFieldSpec(
+        const EntityFieldSpec(
           key: 'picks',
           label: 'Пики',
           type: EntityFieldType.number,
-          stringValidator: (v) => Validators.positiveInt(v, label: 'Пики'),
         ),
-        EntityFieldSpec(
+        const EntityFieldSpec(
           key: 'wins',
           label: 'Победы',
           type: EntityFieldType.number,
-          stringValidator: (v) =>
-              Validators.nonNegativeInt(v, label: 'Победы'),
         ),
       ],
       onSubmit: (values) async {
         final builds = context.read<BuildRepository>();
-        final code = '${values['code']}'.trim();
-        if (await builds.codeExists(code, excludingId: widget.data.build?.id)) {
-          return const FormSubmitResult(
-            fieldErrors: {'code': 'Код уже используется'},
-          );
-        }
-
-        final picks = int.parse('${values['picks']}'.trim());
-        final wins = int.parse('${values['wins']}'.trim());
-        if (wins > picks) {
-          return const FormSubmitResult(
-            fieldErrors: {
-              'wins': 'Побед не может быть больше числа пиков',
-            },
-          );
-        }
-
         final build = Build(
           id: widget.data.build?.id ?? 0,
           title: '${values['title']}'.trim(),
-          code: code,
+          code: '${values['code']}'.trim(),
           patch: '${values['patch']}'.trim(),
-          difficulty: int.parse('${values['difficulty']}'.trim()),
-          heroId: values['heroId'] as int,
-          proPlayerIds: List<int>.from(values['proPlayerIds'] as List),
-          roleIds: List<int>.from(values['roleIds'] as List),
-          picks: picks,
-          wins: wins,
+          difficulty: int.tryParse('${values['difficulty']}'.trim()) ?? 0,
+          heroId: values['heroId'] as int? ?? 0,
+          proPlayerIds: List<int>.from(
+            (values['proPlayerIds'] as List?) ?? const [],
+          ),
+          roleIds: List<int>.from((values['roleIds'] as List?) ?? const []),
+          picks: int.tryParse('${values['picks']}'.trim()) ?? -1,
+          wins: int.tryParse('${values['wins']}'.trim()) ?? -1,
           deletedAt: widget.data.build?.deletedAt,
         );
 

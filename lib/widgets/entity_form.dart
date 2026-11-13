@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/api_exceptions.dart';
 import 'confirm_dialog.dart';
 import 'form_exit_scope.dart';
 
@@ -111,24 +112,47 @@ class EntityFormState extends State<EntityForm> {
       _formError = null;
       _fieldErrors = {};
     });
-    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);
-    final result = await widget.onSubmit(Map<String, dynamic>.from(_values));
-    if (!mounted) return;
-    setState(() {
-      _saving = false;
-      _formError = result.formError;
-      _fieldErrors = Map<String, String>.from(result.fieldErrors);
-    });
-    if (result.formError != null || result.fieldErrors.isNotEmpty) {
+    try {
+      final result = await widget.onSubmit(Map<String, dynamic>.from(_values));
+      if (!mounted) return;
+      setState(() {
+        _formError = result.formError;
+        _fieldErrors = Map<String, String>.from(result.fieldErrors);
+      });
+      if (result.formError != null || result.fieldErrors.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _formKey.currentState?.validate();
+        });
+        return;
+      }
+      _baseline = Map<String, dynamic>.from(_values);
+      FormExitScope.allowNextExit();
+      if (mounted) Navigator.of(context).maybePop();
+    } on ValidationException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _formError = e.message;
+        _fieldErrors = Map<String, String>.from(e.errors);
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _formKey.currentState?.validate();
       });
-      return;
+    } on ConflictException catch (e) {
+      if (!mounted) return;
+      setState(() => _formError = e.message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _formError = e.message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
-    _baseline = Map<String, dynamic>.from(_values);
-    FormExitScope.allowNextExit();
-    if (mounted) Navigator.of(context).maybePop();
   }
 
   Future<void> _handlePop(bool didPop) async {
@@ -269,8 +293,7 @@ class EntityFormState extends State<EntityForm> {
           maxLines:
               field.type == EntityFieldType.multiline ? field.maxLines : 1,
           decoration: InputDecoration(labelText: field.label),
-          validator: (v) =>
-              _fieldErrors[field.key] ?? field.stringValidator?.call(v),
+          validator: (_) => _fieldErrors[field.key],
           onChanged: (v) => _setValue(field.key, v),
         );
       case EntityFieldType.dropdown:
@@ -287,8 +310,7 @@ class EntityFormState extends State<EntityForm> {
               : (v) {
                   _setValue(field.key, v);
                 },
-          validator: (v) =>
-              _fieldErrors[field.key] ?? field.idValidator?.call(v),
+          validator: (_) => _fieldErrors[field.key],
         );
       case EntityFieldType.multiChip:
         final options =
@@ -298,8 +320,7 @@ class EntityFormState extends State<EntityForm> {
         return FormField<List<int>>(
           initialValue: selected,
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: (v) =>
-              _fieldErrors[field.key] ?? field.idsValidator?.call(v),
+          validator: (_) => _fieldErrors[field.key],
           builder: (state) {
             return InputDecorator(
               decoration: InputDecoration(

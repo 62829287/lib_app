@@ -8,6 +8,7 @@ import '../core/breakpoints.dart';
 import '../models/app_user.dart';
 import '../models/list_query.dart';
 import '../state/app_user_list_notifier.dart';
+import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/entity_table.dart';
@@ -37,7 +38,11 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
       defaultSort: 'nickname',
     );
     if (_search.text != q.search) _search.text = q.search;
-    context.read<AppUserListNotifier>().applyQuery(q);
+    final notifier = context.read<AppUserListNotifier>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      notifier.applyQuery(q);
+    });
   }
 
   @override
@@ -206,7 +211,13 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
       case LoadStatus.loading:
         return const LoadingView();
       case LoadStatus.error:
-        return ErrorView(message: n.error ?? '', onRetry: n.load);
+        return ErrorView(
+          message: n.error ?? '',
+          onRetry: () {
+            context.read<CatalogNotifier>().load();
+            n.load();
+          },
+        );
       case LoadStatus.success:
         if (n.result.items.isEmpty) {
           return const EmptyView(message: 'Пользователи не найдены');

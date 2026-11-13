@@ -14,4 +14,5 @@ abstract interface class ProPlayerRepository {
   Future<int> hardDeleteMany(List<int> ids);
   Future<int> restoreMany(List<int> ids);
   Future<List<ProPlayer>> allActive();
+  void invalidateCatalogCache();
 }
