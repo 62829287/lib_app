@@ -4,6 +4,8 @@ analyzer:
   exclude:
     - build/**
     - web/**
+  errors:
+    deprecated_member_use: ignore
 
 linter:
   rules:
