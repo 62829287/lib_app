@@ -29,18 +29,18 @@ class Role {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Role.fromJson(Map<String, dynamic> json) => Role(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        name: json['name'] as String? ?? '',
-        description: json['description'] as String? ?? '',
-        deletedAt: json['deletedAt'] == null
-            ? null
-            : DateTime.tryParse('${json['deletedAt']}'),
-      );
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    name: json['name'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+    deletedAt: json['deletedAt'] == null
+        ? null
+        : DateTime.tryParse('${json['deletedAt']}'),
+  );
 }

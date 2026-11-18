@@ -3,11 +3,9 @@ import 'package:flutter/widgets.dart';
 class Breakpoints {
   const Breakpoints._();
 
-  static const double table = 600;
-
-  static const double medium = 900;
+  static const double medium = 768;
   static const double expanded = 1280;
-  static const double contentMaxWidth = 1120;
+  static const double contentMaxWidth = 1200;
 }
 
 enum LayoutSize { compact, medium, expanded }
@@ -20,5 +18,14 @@ LayoutSize layoutSizeOf(BuildContext context) {
 }
 
 bool useCardListOf(BuildContext context) {
-  return MediaQuery.sizeOf(context).width < Breakpoints.table;
+  return MediaQuery.sizeOf(context).width < Breakpoints.expanded;
+}
+
+int gridColumnsOf(BuildContext context) {
+  final size = layoutSizeOf(context);
+  return switch (size) {
+    LayoutSize.compact => 1,
+    LayoutSize.medium => 2,
+    LayoutSize.expanded => 2,
+  };
 }

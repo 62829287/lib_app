@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/api_client.dart';
+import 'core/config.dart';
 import 'repositories/api_app_user_repository.dart';
 import 'repositories/api_build_repository.dart';
 import 'repositories/api_hero_repository.dart';
@@ -15,6 +16,13 @@ import 'state/auth_notifier.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy();
+
+  if (apiBaseUrl.isEmpty) {
+    debugPrint(
+      'API_BASE_URL не задан. Запуск: '
+      'flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8080/api',
+    );
+  }
 
   final prefs = await SharedPreferences.getInstance();
 

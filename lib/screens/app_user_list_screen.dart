@@ -56,8 +56,10 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
   void _replace(ListQuery q) {
     final params = q.toQueryParameters();
     context.replace(
-      Uri(path: '/users', queryParameters: params.isEmpty ? null : params)
-          .toString(),
+      Uri(
+        path: '/users',
+        queryParameters: params.isEmpty ? null : params,
+      ).toString(),
     );
   }
 
@@ -65,7 +67,8 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
     final ok = await confirmAction(
       context,
       title: 'Удалить навсегда?',
-      message: 'Пользователь «${user.nickname}» будет стёрт без восстановления.',
+      message:
+          'Пользователь «${user.nickname}» будет стёрт без восстановления.',
       confirmLabel: 'Стереть',
     );
     if (ok) await n.hardDelete(user.id);
@@ -173,9 +176,11 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                 if (n.selectionHasActive)
                   FilledButton.tonalIcon(
                     onPressed: () async {
-                      if (await confirmAction(context,
-                          title: 'В корзину?',
-                          message: 'Логическое удаление')) {
+                      if (await confirmAction(
+                        context,
+                        title: 'В корзину?',
+                        message: 'Логическое удаление',
+                      )) {
                         await n.softDeleteSelected();
                       }
                     },
@@ -191,10 +196,12 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                 if (canHard)
                   FilledButton.icon(
                     onPressed: () async {
-                      if (await confirmAction(context,
-                          title: 'Удалить навсегда?',
-                          message: 'Физическое удаление',
-                          confirmLabel: 'Стереть')) {
+                      if (await confirmAction(
+                        context,
+                        title: 'Удалить навсегда?',
+                        message: 'Физическое удаление',
+                        confirmLabel: 'Стереть',
+                      )) {
                         await n.hardDeleteSelected();
                       }
                     },
@@ -255,8 +262,9 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                     title: Text(
                       u.nickname,
                       style: TextStyle(
-                        decoration:
-                            u.isDeleted ? TextDecoration.lineThrough : null,
+                        decoration: u.isDeleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     subtitle: Text('${u.email} · ${u.region}'),
@@ -277,7 +285,10 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'open', child: Text('Открыть')),
+                        const PopupMenuItem(
+                          value: 'open',
+                          child: Text('Открыть'),
+                        ),
                         if (canEdit)
                           const PopupMenuItem(
                             value: 'edit',
@@ -314,8 +325,7 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
               build: (u) => Text(
                 u.nickname,
                 style: TextStyle(
-                  decoration:
-                      u.isDeleted ? TextDecoration.lineThrough : null,
+                  decoration: u.isDeleted ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
@@ -343,18 +353,14 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
           onSort: (f) => _replace(
             n.query.copyWith(
               sortField: f,
-              sortAscending:
-                  n.query.sortField == f ? !n.query.sortAscending : true,
+              sortAscending: n.query.sortField == f
+                  ? !n.query.sortAscending
+                  : true,
               page: 1,
             ),
           ),
           onRowTap: (u) => context.go('/users/${u.id}'),
-          actions: (u) => _rowActions(
-            u,
-            n,
-            canEdit: canEdit,
-            canHard: canHard,
-          ),
+          actions: (u) => _rowActions(u, n, canEdit: canEdit, canHard: canHard),
         );
     }
   }

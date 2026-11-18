@@ -71,10 +71,7 @@ class _BuildDetailScreenState extends State<BuildDetailScreen> {
             _InfoRow(label: 'Код', value: build.code),
             _InfoRow(label: 'Патч', value: build.patch),
             _InfoRow(label: 'Сложность', value: '${build.difficulty}'),
-            _InfoRow(
-              label: 'Герой',
-              value: catalog.heroName(build.heroId),
-            ),
+            _InfoRow(label: 'Герой', value: catalog.heroName(build.heroId)),
             _InfoRow(
               label: 'Роли',
               value: build.roleIds.map(catalog.roleName).join(', '),

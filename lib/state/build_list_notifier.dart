@@ -67,8 +67,10 @@ class BuildListNotifier extends ChangeNotifier {
   }
 
   Future<void> softDeleteSelected() async {
-    final ids =
-        selectedItems.where((b) => !b.isDeleted).map((b) => b.id).toList();
+    final ids = selectedItems
+        .where((b) => !b.isDeleted)
+        .map((b) => b.id)
+        .toList();
     if (ids.isEmpty) return;
     await _repository.softDeleteMany(ids);
     _selected.clear();
@@ -84,8 +86,10 @@ class BuildListNotifier extends ChangeNotifier {
   }
 
   Future<void> restoreSelected() async {
-    final ids =
-        selectedItems.where((b) => b.isDeleted).map((b) => b.id).toList();
+    final ids = selectedItems
+        .where((b) => b.isDeleted)
+        .map((b) => b.id)
+        .toList();
     if (ids.isEmpty) return;
     await _repository.restoreMany(ids);
     _selected.clear();

@@ -70,9 +70,7 @@ class _SessionGuardState extends State<SessionGuard> {
           ),
         );
       },
-      onTimeout: () => _endSession(
-        'Сессия завершена из‑за неактивности.',
-      ),
+      onTimeout: () => _endSession('Сессия завершена из‑за неактивности.'),
       child: widget.child,
     );
   }

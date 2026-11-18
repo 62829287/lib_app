@@ -84,17 +84,15 @@ class _EntityTableState<T> extends State<EntityTable<T>> {
                   onSort: column.sortField == null || widget.onSort == null
                       ? null
                       : (columnIndex, ascending) =>
-                          widget.onSort!(column.sortField!),
+                            widget.onSort!(column.sortField!),
                   label: _SortHeader(
                     label: column.label,
                     active: widget.sortField == column.sortField,
                     ascending: widget.sortAscending,
-                    sortable:
-                        column.sortField != null && widget.onSort != null,
+                    sortable: column.sortField != null && widget.onSort != null,
                   ),
                 ),
-              if (showActions)
-                const DataColumn(label: Text('Действия')),
+              if (showActions) const DataColumn(label: Text('Действия')),
             ],
             rows: [
               for (final item in widget.items)
@@ -103,8 +101,8 @@ class _EntityTableState<T> extends State<EntityTable<T>> {
                   onSelectChanged: showSelect
                       ? (_) => widget.onToggleSelect!(widget.idOf(item))
                       : (widget.onRowTap == null
-                          ? null
-                          : (_) => widget.onRowTap!(item)),
+                            ? null
+                            : (_) => widget.onRowTap!(item)),
                   cells: [
                     for (final column in widget.columns)
                       DataCell(column.build(item)),

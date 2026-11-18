@@ -45,10 +45,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _busy = true);
     try {
       await context.read<AuthNotifier>().register(
-            username: _username.text,
-            displayName: _displayName.text,
-            password: _password.text,
-          );
+        username: _username.text,
+        displayName: _displayName.text,
+        password: _password.text,
+      );
       if (!mounted) return;
       context.go('/');
     } on ApiException catch (e) {
@@ -106,8 +106,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         labelText: 'Отображаемое имя',
                         prefixIcon: Icon(Icons.badge_outlined),
                       ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Введите имя' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Введите имя'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -118,6 +119,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         labelText: 'Пароль',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
+                          tooltip: _obscure
+                              ? 'Показать пароль'
+                              : 'Скрыть пароль',
                           onPressed: () => setState(() => _obscure = !_obscure),
                           icon: Icon(
                             _obscure ? Icons.visibility : Icons.visibility_off,
@@ -170,7 +174,10 @@ class _PasswordChecklist extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      ('Не меньше ${PasswordRules.minLength} символов', PasswordRules.hasMinLength(value)),
+      (
+        'Не меньше ${PasswordRules.minLength} символов',
+        PasswordRules.hasMinLength(value),
+      ),
       ('Есть цифра', PasswordRules.hasDigit(value)),
       ('Есть спецсимвол', PasswordRules.hasSpecial(value)),
     ];

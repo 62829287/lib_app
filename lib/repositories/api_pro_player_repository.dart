@@ -28,8 +28,7 @@ class ApiProPlayerRepository implements ProPlayerRepository {
         '/pro-players',
         queryParameters: {
           if (q.search.trim().isNotEmpty) 'search': q.search.trim(),
-          if (q.country != null && q.country!.isNotEmpty)
-            'country': q.country,
+          if (q.country != null && q.country!.isNotEmpty) 'country': q.country,
           'sort': '${q.sortField},${q.sortAscending ? 'asc' : 'desc'}',
           'page': q.page,
           'size': q.size,
@@ -52,99 +51,96 @@ class ApiProPlayerRepository implements ProPlayerRepository {
 
   @override
   Future<ProPlayer?> findById(int id) => guardRead(() async {
-        try {
-          final response =
-              await _dio.get<Map<String, dynamic>>('/pro-players/$id');
-          return ProPlayer.fromJson(response.data!);
-        } on DioException catch (e) {
-          if (e.response?.statusCode == 404 ||
-              e.error is NotFoundException) {
-            return null;
-          }
-          rethrow;
-        }
-      });
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/pro-players/$id');
+      return ProPlayer.fromJson(response.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.error is NotFoundException) {
+        return null;
+      }
+      rethrow;
+    }
+  });
 
   @override
   Future<ProPlayer> create(ProPlayer player) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/pro-players',
-          data: {
-            'nickname': player.nickname,
-            'realName': player.realName,
-            'team': player.team,
-            'rating': player.rating,
-            'country': player.country,
-          },
-        );
-        invalidateCatalogCache();
-        return ProPlayer.fromJson(response.data!);
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/pro-players',
+      data: {
+        'nickname': player.nickname,
+        'realName': player.realName,
+        'team': player.team,
+        'rating': player.rating,
+        'country': player.country,
+      },
+    );
+    invalidateCatalogCache();
+    return ProPlayer.fromJson(response.data!);
+  });
 
   @override
   Future<ProPlayer> update(ProPlayer player) => guard(() async {
-        final response = await _dio.put<Map<String, dynamic>>(
-          '/pro-players/${player.id}',
-          data: {
-            'nickname': player.nickname,
-            'realName': player.realName,
-            'team': player.team,
-            'rating': player.rating,
-            'country': player.country,
-          },
-        );
-        invalidateCatalogCache();
-        return ProPlayer.fromJson(response.data!);
-      });
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/pro-players/${player.id}',
+      data: {
+        'nickname': player.nickname,
+        'realName': player.realName,
+        'team': player.team,
+        'rating': player.rating,
+        'country': player.country,
+      },
+    );
+    invalidateCatalogCache();
+    return ProPlayer.fromJson(response.data!);
+  });
 
   @override
   Future<void> softDelete(int id) => guard(() async {
-        await _dio.delete('/pro-players/$id');
-        invalidateCatalogCache();
-      });
+    await _dio.delete('/pro-players/$id');
+    invalidateCatalogCache();
+  });
 
   @override
   Future<void> hardDelete(int id) => guard(() async {
-        await _dio
-            .delete('/pro-players/$id', queryParameters: {'hard': true});
-        invalidateCatalogCache();
-      });
+    await _dio.delete('/pro-players/$id', queryParameters: {'hard': true});
+    invalidateCatalogCache();
+  });
 
   @override
   Future<void> restore(int id) => guard(() async {
-        await _dio.post('/pro-players/$id/restore');
-        invalidateCatalogCache();
-      });
+    await _dio.post('/pro-players/$id/restore');
+    invalidateCatalogCache();
+  });
 
   @override
   Future<int> softDeleteMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/pro-players/bulk-delete',
-          data: {'ids': ids},
-        );
-        invalidateCatalogCache();
-        return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/pro-players/bulk-delete',
+      data: {'ids': ids},
+    );
+    invalidateCatalogCache();
+    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<int> hardDeleteMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/pro-players/bulk-delete',
-          data: {'ids': ids, 'hard': true},
-        );
-        invalidateCatalogCache();
-        return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/pro-players/bulk-delete',
+      data: {'ids': ids, 'hard': true},
+    );
+    invalidateCatalogCache();
+    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<int> restoreMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/pro-players/bulk-restore',
-          data: {'ids': ids},
-        );
-        invalidateCatalogCache();
-        return (response.data?['restored'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/pro-players/bulk-restore',
+      data: {'ids': ids},
+    );
+    invalidateCatalogCache();
+    return (response.data?['restored'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<List<ProPlayer>> allActive() async {

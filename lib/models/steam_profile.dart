@@ -9,11 +9,7 @@ class SteamProfile {
     required this.rating,
   });
 
-  SteamProfile copyWith({
-    String? url,
-    String? nickname,
-    int? rating,
-  }) {
+  SteamProfile copyWith({String? url, String? nickname, int? rating}) {
     return SteamProfile(
       url: url ?? this.url,
       nickname: nickname ?? this.nickname,
@@ -22,10 +18,10 @@ class SteamProfile {
   }
 
   Map<String, dynamic> toJson() => {
-        'url': url,
-        'nickname': nickname,
-        'rating': rating,
-      };
+    'url': url,
+    'nickname': nickname,
+    'rating': rating,
+  };
 
   factory SteamProfile.fromJson(Map<String, dynamic>? json) {
     if (json == null) {

@@ -27,10 +27,7 @@ class PaginationBar extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: [
-        Text(
-          'Всего: ${result.total}',
-          style: theme.textTheme.bodyMedium,
-        ),
+        Text('Всего: ${result.total}', style: theme.textTheme.bodyMedium),
         Text(
           'Стр. ${result.page} из ${result.totalPages}',
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -51,8 +48,9 @@ class PaginationBar extends StatelessWidget {
         ),
         IconButton(
           tooltip: 'Следующая',
-          onPressed:
-              result.hasNext ? () => onPageChanged(result.page + 1) : null,
+          onPressed: result.hasNext
+              ? () => onPageChanged(result.page + 1)
+              : null,
           icon: const Icon(Icons.chevron_right),
         ),
         IconButton(

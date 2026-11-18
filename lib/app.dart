@@ -69,20 +69,17 @@ class LibraryApp extends StatelessWidget {
               ProPlayerListNotifier(context.read<ProPlayerRepository>()),
         ),
         ChangeNotifierProvider(
-          create: (context) =>
-              RoleListNotifier(context.read<RoleRepository>()),
+          create: (context) => RoleListNotifier(context.read<RoleRepository>()),
         ),
         ChangeNotifierProvider(
-          create: (context) =>
-              HeroListNotifier(context.read<HeroRepository>()),
+          create: (context) => HeroListNotifier(context.read<HeroRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) =>
               AppUserListNotifier(context.read<AppUserRepository>()),
         ),
         ChangeNotifierProvider(
-          create: (context) =>
-              AuthAccountsNotifier(context.read<AuthApi>()),
+          create: (context) => AuthAccountsNotifier(context.read<AuthApi>()),
         ),
       ],
       child: const _LibraryMaterialApp(),
@@ -131,9 +128,8 @@ class _LibraryMaterialAppState extends State<_LibraryMaterialApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) => SessionGuard(
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) =>
+          SessionGuard(child: child ?? const SizedBox.shrink()),
     );
   }
 }

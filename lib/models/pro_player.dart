@@ -42,24 +42,24 @@ class ProPlayer {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'nickname': nickname,
-        'realName': realName,
-        'team': team,
-        'rating': rating,
-        'country': country,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'nickname': nickname,
+    'realName': realName,
+    'team': team,
+    'rating': rating,
+    'country': country,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory ProPlayer.fromJson(Map<String, dynamic> json) => ProPlayer(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        nickname: json['nickname'] as String? ?? '',
-        realName: json['realName'] as String? ?? '',
-        team: json['team'] as String? ?? '',
-        rating: (json['rating'] as num?)?.toInt() ?? 0,
-        country: json['country'] as String? ?? '',
-        deletedAt: json['deletedAt'] == null
-            ? null
-            : DateTime.tryParse('${json['deletedAt']}'),
-      );
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    nickname: json['nickname'] as String? ?? '',
+    realName: json['realName'] as String? ?? '',
+    team: json['team'] as String? ?? '',
+    rating: (json['rating'] as num?)?.toInt() ?? 0,
+    country: json['country'] as String? ?? '',
+    deletedAt: json['deletedAt'] == null
+        ? null
+        : DateTime.tryParse('${json['deletedAt']}'),
+  );
 }

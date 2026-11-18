@@ -47,96 +47,88 @@ class ApiAppUserRepository implements AppUserRepository {
 
   @override
   Future<AppUser?> findById(int id) => guardRead(() async {
-        try {
-          final response =
-              await _dio.get<Map<String, dynamic>>('/users/$id');
-          return AppUser.fromJson(response.data!);
-        } on DioException catch (e) {
-          if (e.response?.statusCode == 404 ||
-              e.error is NotFoundException) {
-            return null;
-          }
-          rethrow;
-        }
-      });
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/users/$id');
+      return AppUser.fromJson(response.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.error is NotFoundException) {
+        return null;
+      }
+      rethrow;
+    }
+  });
 
   @override
   Future<AppUser> create(AppUser user) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/users',
-          data: {
-            'nickname': user.nickname,
-            'email': user.email,
-            'region': user.region,
-            'steam': user.steam.toJson(),
-          },
-        );
-        return AppUser.fromJson(response.data!);
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/users',
+      data: {
+        'nickname': user.nickname,
+        'email': user.email,
+        'region': user.region,
+        'steam': user.steam.toJson(),
+      },
+    );
+    return AppUser.fromJson(response.data!);
+  });
 
   @override
   Future<AppUser> update(AppUser user) => guard(() async {
-        final response = await _dio.put<Map<String, dynamic>>(
-          '/users/${user.id}',
-          data: {
-            'nickname': user.nickname,
-            'email': user.email,
-            'region': user.region,
-            'steam': user.steam.toJson(),
-          },
-        );
-        return AppUser.fromJson(response.data!);
-      });
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/users/${user.id}',
+      data: {
+        'nickname': user.nickname,
+        'email': user.email,
+        'region': user.region,
+        'steam': user.steam.toJson(),
+      },
+    );
+    return AppUser.fromJson(response.data!);
+  });
 
   @override
-  Future<void> softDelete(int id) =>
-      guard(() => _dio.delete('/users/$id'));
+  Future<void> softDelete(int id) => guard(() => _dio.delete('/users/$id'));
 
   @override
-  Future<void> hardDelete(int id) => guard(
-        () => _dio.delete('/users/$id', queryParameters: {'hard': true}),
-      );
+  Future<void> hardDelete(int id) =>
+      guard(() => _dio.delete('/users/$id', queryParameters: {'hard': true}));
 
   @override
-  Future<void> restore(int id) =>
-      guard(() => _dio.post('/users/$id/restore'));
+  Future<void> restore(int id) => guard(() => _dio.post('/users/$id/restore'));
 
   @override
   Future<int> softDeleteMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/users/bulk-delete',
-          data: {'ids': ids},
-        );
-        return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/users/bulk-delete',
+      data: {'ids': ids},
+    );
+    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<int> hardDeleteMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/users/bulk-delete',
-          data: {'ids': ids, 'hard': true},
-        );
-        return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/users/bulk-delete',
+      data: {'ids': ids, 'hard': true},
+    );
+    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<int> restoreMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/users/bulk-restore',
-          data: {'ids': ids},
-        );
-        return (response.data?['restored'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/users/bulk-restore',
+      data: {'ids': ids},
+    );
+    return (response.data?['restored'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<bool> emailExists(String email, {int? excludingId}) =>
       guardRead(() async {
         final response = await _dio.get<Map<String, dynamic>>(
           '/users/email-exists',
-          queryParameters: {
-            'email': email,
-            if (excludingId != null) 'excludingId': excludingId,
-          },
+          queryParameters: {'email': email, 'excludingId': ?excludingId},
         );
         return response.data?['exists'] == true;
       });

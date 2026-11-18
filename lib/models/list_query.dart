@@ -31,7 +31,8 @@ class ListQuery {
     final filtersChanged = filters != null;
     final searchChanged = search != null;
     final includeChanged = includeDeleted != null;
-    final shouldReset = resetPageOnFilter &&
+    final shouldReset =
+        resetPageOnFilter &&
         (filtersChanged || searchChanged || includeChanged);
 
     return ListQuery(
@@ -48,8 +49,7 @@ class ListQuery {
   Map<String, String> toQueryParameters() {
     final params = <String, String>{};
     if (search.trim().isNotEmpty) params['search'] = search.trim();
-    if (sortField.isNotEmpty &&
-        (sortField != 'name' || !sortAscending)) {
+    if (sortField.isNotEmpty && (sortField != 'name' || !sortAscending)) {
       params['sort'] = '$sortField,${sortAscending ? 'asc' : 'desc'}';
     }
     if (page != 1) params['page'] = '$page';
@@ -74,13 +74,7 @@ class ListQuery {
       }
     }
 
-    final known = {
-      'search',
-      'sort',
-      'page',
-      'size',
-      'includeDeleted',
-    };
+    final known = {'search', 'sort', 'page', 'size', 'includeDeleted'};
     final filters = <String, String>{};
     for (final entry in params.entries) {
       if (!known.contains(entry.key) && entry.value.isNotEmpty) {
@@ -94,8 +88,8 @@ class ListQuery {
       sortAscending: sortAscending,
       page: int.tryParse(params['page'] ?? '') ?? 1,
       size: int.tryParse(params['size'] ?? '') ?? 10,
-      includeDeleted: params['includeDeleted'] == '1' ||
-          params['includeDeleted'] == 'true',
+      includeDeleted:
+          params['includeDeleted'] == '1' || params['includeDeleted'] == 'true',
       filters: filters,
     );
   }

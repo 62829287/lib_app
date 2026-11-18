@@ -14,9 +14,9 @@ class CatalogNotifier extends ChangeNotifier {
     required RoleRepository roles,
     required HeroRepository heroes,
     required ProPlayerRepository proPlayers,
-  })  : _rolesRepo = roles,
-        _heroesRepo = heroes,
-        _proPlayersRepo = proPlayers;
+  }) : _rolesRepo = roles,
+       _heroesRepo = heroes,
+       _proPlayersRepo = proPlayers;
 
   final RoleRepository _rolesRepo;
   final HeroRepository _heroesRepo;

@@ -54,8 +54,10 @@ class _RoleListScreenState extends State<RoleListScreen> {
   void _replace(ListQuery q) {
     final params = q.toQueryParameters();
     context.replace(
-      Uri(path: '/roles', queryParameters: params.isEmpty ? null : params)
-          .toString(),
+      Uri(
+        path: '/roles',
+        queryParameters: params.isEmpty ? null : params,
+      ).toString(),
     );
   }
 
@@ -125,7 +127,10 @@ class _RoleListScreenState extends State<RoleListScreen> {
         Row(
           children: [
             Expanded(
-              child: Text('Роли', style: Theme.of(context).textTheme.headlineSmall),
+              child: Text(
+                'Роли',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
             ),
             if (canEdit)
               FilledButton.icon(
@@ -183,9 +188,11 @@ class _RoleListScreenState extends State<RoleListScreen> {
           if (n.selectionHasActive)
             FilledButton.tonalIcon(
               onPressed: () async {
-                if (await confirmAction(context,
-                    title: 'В корзину?',
-                    message: 'Логическое удаление выбранных ролей')) {
+                if (await confirmAction(
+                  context,
+                  title: 'В корзину?',
+                  message: 'Логическое удаление выбранных ролей',
+                )) {
                   await n.softDeleteSelected();
                 }
               },
@@ -201,13 +208,14 @@ class _RoleListScreenState extends State<RoleListScreen> {
           if (canHard)
             FilledButton.icon(
               onPressed: () async {
-                if (await confirmAction(context,
-                    title: 'Удалить навсегда?',
-                    message: 'Физическое удаление',
-                    confirmLabel: 'Стереть')) {
-                  if (!context.mounted) return;
-                  await runApiAction(context, n.hardDeleteSelected);
-                }
+                final ok = await confirmAction(
+                  context,
+                  title: 'Удалить навсегда?',
+                  message: 'Физическое удаление',
+                  confirmLabel: 'Стереть',
+                );
+                if (!ok || !mounted) return;
+                await runApiAction(context, n.hardDeleteSelected);
               },
               icon: const Icon(Icons.delete_forever_outlined),
               label: const Text('Удалить навсегда'),
@@ -256,8 +264,9 @@ class _RoleListScreenState extends State<RoleListScreen> {
                     title: Text(
                       r.name,
                       style: TextStyle(
-                        decoration:
-                            r.isDeleted ? TextDecoration.lineThrough : null,
+                        decoration: r.isDeleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     subtitle: Text(r.description),
@@ -278,7 +287,10 @@ class _RoleListScreenState extends State<RoleListScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'open', child: Text('Открыть')),
+                        const PopupMenuItem(
+                          value: 'open',
+                          child: Text('Открыть'),
+                        ),
                         if (canEdit)
                           const PopupMenuItem(
                             value: 'edit',
@@ -315,8 +327,7 @@ class _RoleListScreenState extends State<RoleListScreen> {
               build: (r) => Text(
                 r.name,
                 style: TextStyle(
-                  decoration:
-                      r.isDeleted ? TextDecoration.lineThrough : null,
+                  decoration: r.isDeleted ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
@@ -335,18 +346,14 @@ class _RoleListScreenState extends State<RoleListScreen> {
           onSort: (f) => _replace(
             n.query.copyWith(
               sortField: f,
-              sortAscending:
-                  n.query.sortField == f ? !n.query.sortAscending : true,
+              sortAscending: n.query.sortField == f
+                  ? !n.query.sortAscending
+                  : true,
               page: 1,
             ),
           ),
           onRowTap: (r) => context.go('/roles/${r.id}'),
-          actions: (r) => _rowActions(
-            r,
-            n,
-            canEdit: canEdit,
-            canHard: canHard,
-          ),
+          actions: (r) => _rowActions(r, n, canEdit: canEdit, canHard: canHard),
         );
     }
   }

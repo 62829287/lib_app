@@ -42,17 +42,17 @@ class _AuthAccountsScreenState extends State<AuthAccountsScreen> {
     if (next == null || next == user.role) return;
     final auth = context.read<AuthNotifier>();
     await runApiAction(context, () async {
-      final updated =
-          await context.read<AuthAccountsNotifier>().updateRole(user.id, next.key);
+      final updated = await context.read<AuthAccountsNotifier>().updateRole(
+        user.id,
+        next.key,
+      );
       if (auth.user?.id == updated.id) {
         await auth.applyLocalUser(updated);
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Роль «${updated.username}» → ${updated.role.label}',
-          ),
+          content: Text('Роль «${updated.username}» → ${updated.role.label}'),
         ),
       );
     });
@@ -95,10 +95,7 @@ class _AuthAccountsScreenState extends State<AuthAccountsScreen> {
       case LoadStatus.loading:
         return const LoadingView();
       case LoadStatus.error:
-        return ErrorView(
-          message: n.error ?? '',
-          onRetry: () => n.load(),
-        );
+        return ErrorView(message: n.error ?? '', onRetry: () => n.load());
       case LoadStatus.success:
         if (n.items.isEmpty) {
           return const EmptyView(message: 'Учётные записи не найдены');
@@ -144,12 +141,7 @@ class _AccountTile extends StatelessWidget {
         ),
       ),
       title: Text(user.displayName),
-      subtitle: Text(
-        [
-          user.username,
-          if (isSelf) 'это вы',
-        ].join(' · '),
-      ),
+      subtitle: Text([user.username, if (isSelf) 'это вы'].join(' · ')),
       trailing: SizedBox(
         width: 160,
         child: DropdownButtonFormField<AuthRole>(
@@ -162,10 +154,7 @@ class _AccountTile extends StatelessWidget {
           ),
           items: [
             for (final role in AuthRole.values)
-              DropdownMenuItem(
-                value: role,
-                child: Text(role.label),
-              ),
+              DropdownMenuItem(value: role, child: Text(role.label)),
           ],
           onChanged: onRoleChanged,
         ),

@@ -191,9 +191,7 @@ class _BuildFormState extends State<_BuildForm> {
           key: 'roleIds',
           label: 'Роли',
           type: EntityFieldType.multiChip,
-          chipItems: () => [
-            for (final r in _roles) (id: r.id, label: r.name),
-          ],
+          chipItems: () => [for (final r in _roles) (id: r.id, label: r.name)],
         ),
         const EntityFieldSpec(
           key: 'picks',

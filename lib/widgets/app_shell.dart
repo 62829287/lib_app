@@ -29,12 +29,12 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthNotifier>();
     final sections = _sectionsFor(auth);
-    final compact = layoutSizeOf(context) == LayoutSize.compact;
+    final layout = layoutSizeOf(context);
     final location = GoRouterState.of(context).uri.path;
     final selected = _sectionIndex(sections, location);
     final userLabel = auth.user?.displayName ?? auth.user?.username ?? '';
 
-    if (compact) {
+    if (layout == LayoutSize.compact) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Dota Builds'),
@@ -53,53 +53,45 @@ class _AppShellState extends State<AppShell> {
             ),
           ],
         ),
-        drawer: NavigationDrawer(
-          selectedIndex: selected < 0 ? null : selected,
-          onDestinationSelected: (index) {
-            Navigator.of(context).pop();
-            context.go(sections[index].path);
-          },
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(28, 24, 16, 8),
-              child: Text(
-                userLabel.isEmpty ? 'Меню' : userLabel,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            if (auth.user != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(28, 0, 16, 16),
-                child: Text(
-                  auth.user!.role.label,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
+        body: _Content(child: widget.child),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: selected.clamp(0, sections.length - 1),
+          onDestinationSelected: (index) => context.go(sections[index].path),
+          destinations: [
             for (final section in sections)
-              NavigationDrawerDestination(
+              NavigationDestination(
                 icon: Icon(section.icon),
-                label: Text(section.title),
+                label: section.title,
+                tooltip: section.title,
               ),
           ],
         ),
-        body: _Content(child: widget.child),
       );
     }
+
+    final extended = layout == LayoutSize.expanded;
 
     return Scaffold(
       body: Row(
         children: [
           NavigationRail(
+            extended: extended,
             selectedIndex: selected < 0 ? 0 : selected,
-            labelType: NavigationRailLabelType.all,
+            labelType: extended
+                ? NavigationRailLabelType.none
+                : NavigationRailLabelType.all,
             leading: Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Column(
                 children: [
-                  const Icon(Icons.sports_esports, size: 28),
+                  const Icon(
+                    Icons.sports_esports,
+                    size: 28,
+                    semanticLabel: 'Dota Builds',
+                  ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    width: 72,
+                    width: extended ? 120 : 72,
                     child: Text(
                       userLabel,
                       textAlign: TextAlign.center,
@@ -111,8 +103,8 @@ class _AppShellState extends State<AppShell> {
                   Text(
                     auth.user?.role.label ?? '',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                 ],
               ),
@@ -122,12 +114,11 @@ class _AppShellState extends State<AppShell> {
               onPressed: () => auth.logout(),
               icon: const Icon(Icons.logout),
             ),
-            onDestinationSelected: (index) =>
-                context.go(sections[index].path),
+            onDestinationSelected: (index) => context.go(sections[index].path),
             destinations: [
               for (final section in sections)
                 NavigationRailDestination(
-                  icon: Icon(section.icon),
+                  icon: Icon(section.icon, semanticLabel: section.title),
                   label: Text(section.title),
                 ),
             ],
@@ -197,10 +188,7 @@ class _Content extends StatelessWidget {
           constraints: const BoxConstraints(
             maxWidth: Breakpoints.contentMaxWidth,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: child,
-          ),
+          child: Padding(padding: const EdgeInsets.all(20), child: child),
         ),
       ),
     );

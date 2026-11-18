@@ -42,7 +42,15 @@ class _HeroDetailScreenState extends State<HeroDetailScreen> {
     return FutureBuilder<_DetailData>(
       future: _future,
       builder: (context, snap) {
-        if (!snap.hasData) return const LoadingView();
+        if (snap.connectionState != ConnectionState.done) {
+          return const LoadingView();
+        }
+        if (snap.hasError) {
+          return ErrorView(
+            message: '${snap.error}',
+            onRetry: () => setState(() => _future = _load()),
+          );
+        }
         final data = snap.data!;
         final h = data.hero;
         if (h == null) return const EmptyView(message: 'Герой не найден');

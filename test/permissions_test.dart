@@ -4,8 +4,8 @@ import 'package:library_app/core/router.dart';
 import 'package:library_app/models/auth_role.dart';
 
 void main() {
-  group('Permissions by role', () {
-    test('viewer may browse builds and pros only', () {
+  group('Права доступа по ролям', () {
+    test('читатель может только просматривать сборки и про-игроков', () {
       const role = AuthRole.viewer;
       expect(Permissions.canBrowseBuilds(role), isTrue);
       expect(Permissions.canBrowsePros(role), isTrue);
@@ -16,7 +16,7 @@ void main() {
       expect(Permissions.canOpenUsersSection(role), isFalse);
     });
 
-    test('editor may browse and edit catalog but not manage users', () {
+    test('редактор может править каталог, но не управляет пользователями', () {
       const role = AuthRole.editor;
       expect(Permissions.canBrowseBuilds(role), isTrue);
       expect(Permissions.canBrowsePros(role), isTrue);
@@ -27,7 +27,7 @@ void main() {
       expect(Permissions.canOpenUsersSection(role), isFalse);
     });
 
-    test('admin has all operations including users and hard-delete', () {
+    test('администратор имеет все операции, включая пользователей и hard-delete', () {
       const role = AuthRole.admin;
       expect(Permissions.canBrowseBuilds(role), isTrue);
       expect(Permissions.canBrowsePros(role), isTrue);
@@ -38,7 +38,7 @@ void main() {
       expect(Permissions.canOpenUsersSection(role), isTrue);
     });
 
-    test('routeAllowedFor blocks viewer from reference and mutate paths', () {
+    test('читателю закрыты справочники и маршруты изменения', () {
       expect(routeAllowedFor(AuthRole.viewer, '/builds'), isTrue);
       expect(routeAllowedFor(AuthRole.viewer, '/pros'), isTrue);
       expect(routeAllowedFor(AuthRole.viewer, '/builds/new'), isFalse);
@@ -48,7 +48,7 @@ void main() {
       expect(routeAllowedFor(AuthRole.viewer, '/users'), isFalse);
     });
 
-    test('routeAllowedFor allows editor catalog but not users', () {
+    test('редактору доступен каталог, пользователи закрыты', () {
       expect(routeAllowedFor(AuthRole.editor, '/heroes'), isTrue);
       expect(routeAllowedFor(AuthRole.editor, '/roles/new'), isTrue);
       expect(routeAllowedFor(AuthRole.editor, '/pros/2/edit'), isTrue);
@@ -57,7 +57,7 @@ void main() {
       expect(routeAllowedFor(AuthRole.admin, '/builds/new'), isTrue);
     });
 
-    test('role levels are ordered viewer < editor < admin', () {
+    test('уровни ролей: читатель < редактор < администратор', () {
       expect(AuthRole.viewer.atLeast(AuthRole.viewer), isTrue);
       expect(AuthRole.viewer.atLeast(AuthRole.editor), isFalse);
       expect(AuthRole.editor.atLeast(AuthRole.viewer), isTrue);
@@ -66,8 +66,8 @@ void main() {
     });
   });
 
-  group('PasswordRules', () {
-    test('requires length, digit and special as user types', () {
+  group('Правила пароля', () {
+    test('нужны длина, цифра и спецсимвол', () {
       expect(PasswordRules.isStrong('short'), isFalse);
       expect(PasswordRules.isStrong('longenough'), isFalse);
       expect(PasswordRules.isStrong('longenough1'), isFalse);

@@ -81,7 +81,8 @@ Dio buildDio({
 
         final status = error.response?.statusCode;
         final path = error.requestOptions.path;
-        final alreadyRetried = error.requestOptions.extra['auth_retried'] == true;
+        final alreadyRetried =
+            error.requestOptions.extra['auth_retried'] == true;
         final isAuthPath = path.contains('/auth/');
 
         if (status == 401 &&

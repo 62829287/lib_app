@@ -78,8 +78,10 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
   void _replaceQuery(ProPlayerQuery query) {
     final params = query.toQueryParameters();
     context.replace(
-      Uri(path: '/pros', queryParameters: params.isEmpty ? null : params)
-          .toString(),
+      Uri(
+        path: '/pros',
+        queryParameters: params.isEmpty ? null : params,
+      ).toString(),
     );
   }
 
@@ -136,9 +138,8 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                     'Игрок «${player.nickname}» будет стёрт без восстановления.',
                 confirmLabel: 'Стереть',
               );
-              if (ok && context.mounted) {
-                await runApiAction(context, () => n.hardDelete(player.id));
-              }
+              if (!ok || !mounted) return;
+              await runApiAction(context, () => n.hardDelete(player.id));
             },
           ),
       ],
@@ -241,8 +242,7 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
           PaginationBar(
             result: notifier.result,
             pageSize: query.size,
-            onPageChanged: (page) =>
-                _replaceQuery(query.copyWith(page: page)),
+            onPageChanged: (page) => _replaceQuery(query.copyWith(page: page)),
             onPageSizeChanged: (size) =>
                 _replaceQuery(query.copyWith(size: size, page: 1)),
           ),
@@ -262,9 +262,11 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
           if (n.selectionHasActive)
             FilledButton.tonalIcon(
               onPressed: () async {
-                if (await confirmAction(context,
-                    title: 'В корзину?',
-                    message: 'Логическое удаление выбранных игроков')) {
+                if (await confirmAction(
+                  context,
+                  title: 'В корзину?',
+                  message: 'Логическое удаление выбранных игроков',
+                )) {
                   await n.softDeleteSelected();
                 }
               },
@@ -280,13 +282,14 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
           if (canHard)
             FilledButton.icon(
               onPressed: () async {
-                if (await confirmAction(context,
-                    title: 'Удалить навсегда?',
-                    message: 'Физическое удаление',
-                    confirmLabel: 'Стереть')) {
-                  if (!context.mounted) return;
-                  await runApiAction(context, n.hardDeleteSelected);
-                }
+                final ok = await confirmAction(
+                  context,
+                  title: 'Удалить навсегда?',
+                  message: 'Физическое удаление',
+                  confirmLabel: 'Стереть',
+                );
+                if (!ok || !mounted) return;
+                await runApiAction(context, n.hardDeleteSelected);
               },
               icon: const Icon(Icons.delete_forever_outlined),
               label: const Text('Удалить навсегда'),
@@ -336,11 +339,14 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                     title: Text(
                       p.nickname,
                       style: TextStyle(
-                        decoration:
-                            p.isDeleted ? TextDecoration.lineThrough : null,
+                        decoration: p.isDeleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
-                    subtitle: Text('${p.team} · ${p.country} · рейтинг ${p.rating}'),
+                    subtitle: Text(
+                      '${p.team} · ${p.country} · рейтинг ${p.rating}',
+                    ),
                     onTap: () => context.go('/pros/${p.id}'),
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) async {
@@ -350,10 +356,12 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                           case 'soft':
                             await notifier.softDelete(p.id);
                           case 'hard':
-                            if (await confirmAction(context,
-                                title: 'Удалить навсегда?',
-                                message: 'Игрок «${p.nickname}»',
-                                confirmLabel: 'Стереть')) {
+                            if (await confirmAction(
+                              context,
+                              title: 'Удалить навсегда?',
+                              message: 'Игрок «${p.nickname}»',
+                              confirmLabel: 'Стереть',
+                            )) {
                               if (!context.mounted) return;
                               await runApiAction(
                                 context,
@@ -365,7 +373,10 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'open', child: Text('Открыть')),
+                        const PopupMenuItem(
+                          value: 'open',
+                          child: Text('Открыть'),
+                        ),
                         if (canEdit && p.isDeleted)
                           const PopupMenuItem(
                             value: 'restore',
@@ -397,8 +408,7 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
               build: (p) => Text(
                 p.nickname,
                 style: TextStyle(
-                  decoration:
-                      p.isDeleted ? TextDecoration.lineThrough : null,
+                  decoration: p.isDeleted ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
@@ -440,12 +450,8 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
             ),
           ),
           onRowTap: (p) => context.go('/pros/${p.id}'),
-          actions: (p) => _rowActions(
-            p,
-            notifier,
-            canEdit: canEdit,
-            canHard: canHard,
-          ),
+          actions: (p) =>
+              _rowActions(p, notifier, canEdit: canEdit, canHard: canHard),
         );
     }
   }

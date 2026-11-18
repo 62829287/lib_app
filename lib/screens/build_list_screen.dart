@@ -14,6 +14,7 @@ import '../state/load_status.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/entity_table.dart';
 import '../widgets/pagination_bar.dart';
+import '../widgets/responsive_cards.dart';
 import '../widgets/state_views.dart';
 
 class BuildListScreen extends StatefulWidget {
@@ -99,16 +100,14 @@ class _BuildListScreenState extends State<BuildListScreen> {
   }
 
   int? _difficultyFilter(BuildQuery q) {
-    if (q.difficultyFrom != null &&
-        q.difficultyFrom == q.difficultyTo) {
+    if (q.difficultyFrom != null && q.difficultyFrom == q.difficultyTo) {
       return q.difficultyFrom;
     }
     return null;
   }
 
   Future<void> _confirmSoftDeleteSelected(BuildListNotifier notifier) async {
-    final count =
-        notifier.selectedItems.where((b) => !b.isDeleted).length;
+    final count = notifier.selectedItems.where((b) => !b.isDeleted).length;
     final ok = await confirmAction(
       context,
       title: 'В корзину?',
@@ -304,10 +303,7 @@ class _BuildListScreenState extends State<BuildListScreen> {
                     DropdownMenuItem(value: d, child: Text('$d')),
                 ],
                 onChanged: (value) => _replaceQuery(
-                  query.copyWith(
-                    difficultyFrom: value,
-                    difficultyTo: value,
-                  ),
+                  query.copyWith(difficultyFrom: value, difficultyTo: value),
                 ),
               ),
             ),
@@ -368,8 +364,7 @@ class _BuildListScreenState extends State<BuildListScreen> {
           PaginationBar(
             result: notifier.result,
             pageSize: query.size,
-            onPageChanged: (page) =>
-                _replaceQuery(query.copyWith(page: page)),
+            onPageChanged: (page) => _replaceQuery(query.copyWith(page: page)),
             onPageSizeChanged: (size) =>
                 _replaceQuery(query.copyWith(size: size, page: 1)),
           ),
@@ -405,9 +400,9 @@ class _BuildListScreenState extends State<BuildListScreen> {
           );
         }
         if (useCards) {
-          return Column(
+          return ResponsiveCards(
             children: [
-              for (final build in notifier.result.items) ...[
+              for (final build in notifier.result.items)
                 _BuildCard(
                   item: build,
                   heroName: catalog.heroName(build.heroId),
@@ -429,8 +424,6 @@ class _BuildListScreenState extends State<BuildListScreen> {
                   },
                   onRestore: () => notifier.restore(build.id),
                 ),
-                const SizedBox(height: 10),
-              ],
             ],
           );
         }
@@ -442,8 +435,7 @@ class _BuildListScreenState extends State<BuildListScreen> {
               build: (b) => Text(
                 b.title,
                 style: TextStyle(
-                  decoration:
-                      b.isDeleted ? TextDecoration.lineThrough : null,
+                  decoration: b.isDeleted ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
@@ -493,12 +485,8 @@ class _BuildListScreenState extends State<BuildListScreen> {
             );
           },
           onRowTap: (build) => context.go('/builds/${build.id}'),
-          actions: (build) => _rowActions(
-            build,
-            notifier,
-            canEdit: canEdit,
-            canHard: canHard,
-          ),
+          actions: (build) =>
+              _rowActions(build, notifier, canEdit: canEdit, canHard: canHard),
         );
     }
   }
@@ -560,15 +548,9 @@ class _BuildCard extends StatelessWidget {
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'open', child: Text('Открыть')),
             if (canEdit && item.isDeleted)
-              const PopupMenuItem(
-                value: 'restore',
-                child: Text('Восстановить'),
-              )
+              const PopupMenuItem(value: 'restore', child: Text('Восстановить'))
             else if (canEdit) ...[
-              const PopupMenuItem(
-                value: 'soft',
-                child: Text('В корзину'),
-              ),
+              const PopupMenuItem(value: 'soft', child: Text('В корзину')),
               if (canHard)
                 const PopupMenuItem(
                   value: 'hard',

@@ -6,9 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../models/auth_role.dart';
 import '../screens/app_user_detail_screen.dart';
 import '../screens/app_user_form_screen.dart';
-import '../screens/app_user_list_screen.dart';
-import '../screens/auth_accounts_screen.dart';
 import '../screens/build_detail_screen.dart';
+import '../screens/deferred_admin.dart';
 import '../screens/build_form_screen.dart';
 import '../screens/build_list_screen.dart';
 import '../screens/forbidden_screen.dart';
@@ -66,9 +65,8 @@ GoRouter createRouter(AuthNotifier auth) {
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (context, state) => LoginScreen(
-          from: state.uri.queryParameters['from'],
-        ),
+        builder: (context, state) =>
+            LoginScreen(from: state.uri.queryParameters['from']),
       ),
       GoRoute(
         path: '/register',
@@ -223,13 +221,13 @@ GoRouter createRouter(AuthNotifier auth) {
             path: '/accounts',
             name: 'accounts',
             redirect: (c, s) => _requireAdmin(auth),
-            builder: (context, state) => const AuthAccountsScreen(),
+            builder: (context, state) => const DeferredAuthAccountsScreen(),
           ),
           GoRoute(
             path: '/users',
             name: 'users',
             redirect: (c, s) => _requireAdmin(auth),
-            builder: (context, state) => const AppUserListScreen(),
+            builder: (context, state) => const DeferredAppUserListScreen(),
             routes: [
               GoRoute(
                 path: 'new',

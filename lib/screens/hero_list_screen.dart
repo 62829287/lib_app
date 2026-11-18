@@ -15,6 +15,7 @@ import '../widgets/api_feedback.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/entity_table.dart';
 import '../widgets/pagination_bar.dart';
+import '../widgets/responsive_cards.dart';
 import '../widgets/state_views.dart';
 
 class HeroListScreen extends StatefulWidget {
@@ -54,8 +55,10 @@ class _HeroListScreenState extends State<HeroListScreen> {
   void _replace(ListQuery q) {
     final params = q.toQueryParameters();
     context.replace(
-      Uri(path: '/heroes', queryParameters: params.isEmpty ? null : params)
-          .toString(),
+      Uri(
+        path: '/heroes',
+        queryParameters: params.isEmpty ? null : params,
+      ).toString(),
     );
   }
 
@@ -152,7 +155,10 @@ class _HeroListScreenState extends State<HeroListScreen> {
         Row(
           children: [
             Expanded(
-              child: Text('Герои', style: Theme.of(context).textTheme.headlineSmall),
+              child: Text(
+                'Герои',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
             ),
             if (canEdit)
               FilledButton.icon(
@@ -254,7 +260,7 @@ class _HeroListScreenState extends State<HeroListScreen> {
           return const EmptyView(message: 'Герои не найдены');
         }
         if (cards) {
-          return Column(
+          return ResponsiveCards(
             children: [
               for (final h in n.result.items)
                 Card(
@@ -266,8 +272,9 @@ class _HeroListScreenState extends State<HeroListScreen> {
                     title: Text(
                       h.name,
                       style: TextStyle(
-                        decoration:
-                            h.isDeleted ? TextDecoration.lineThrough : null,
+                        decoration: h.isDeleted
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                     ),
                     subtitle: Text('${h.primaryAttribute} · ${h.attackType}'),
@@ -288,7 +295,10 @@ class _HeroListScreenState extends State<HeroListScreen> {
                         }
                       },
                       itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'open', child: Text('Открыть')),
+                        const PopupMenuItem(
+                          value: 'open',
+                          child: Text('Открыть'),
+                        ),
                         if (canEdit)
                           const PopupMenuItem(
                             value: 'edit',
@@ -325,8 +335,7 @@ class _HeroListScreenState extends State<HeroListScreen> {
               build: (h) => Text(
                 h.name,
                 style: TextStyle(
-                  decoration:
-                      h.isDeleted ? TextDecoration.lineThrough : null,
+                  decoration: h.isDeleted ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),
@@ -350,18 +359,14 @@ class _HeroListScreenState extends State<HeroListScreen> {
           onSort: (f) => _replace(
             n.query.copyWith(
               sortField: f,
-              sortAscending:
-                  n.query.sortField == f ? !n.query.sortAscending : true,
+              sortAscending: n.query.sortField == f
+                  ? !n.query.sortAscending
+                  : true,
               page: 1,
             ),
           ),
           onRowTap: (h) => context.go('/heroes/${h.id}'),
-          actions: (h) => _rowActions(
-            h,
-            n,
-            canEdit: canEdit,
-            canHard: canHard,
-          ),
+          actions: (h) => _rowActions(h, n, canEdit: canEdit, canHard: canHard),
         );
     }
   }

@@ -32,7 +32,9 @@ class _AppUserDetailScreenState extends State<AppUserDetailScreen> {
           return const LoadingView();
         }
         final u = snap.data;
-        if (u == null) return const EmptyView(message: 'Пользователь не найден');
+        if (u == null) {
+          return const EmptyView(message: 'Пользователь не найден');
+        }
         return ListView(
           children: [
             Text(u.nickname, style: Theme.of(context).textTheme.headlineSmall),

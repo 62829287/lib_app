@@ -38,7 +38,8 @@ class BuildQuery {
     int? size,
     bool? includeDeleted,
   }) {
-    final filtersChanged = search != null ||
+    final filtersChanged =
+        search != null ||
         roleId != _unset ||
         heroId != _unset ||
         proPlayerId != _unset ||
@@ -50,13 +51,15 @@ class BuildQuery {
       search: search ?? this.search,
       roleId: roleId == _unset ? this.roleId : roleId as int?,
       heroId: heroId == _unset ? this.heroId : heroId as int?,
-      proPlayerId:
-          proPlayerId == _unset ? this.proPlayerId : proPlayerId as int?,
+      proPlayerId: proPlayerId == _unset
+          ? this.proPlayerId
+          : proPlayerId as int?,
       difficultyFrom: difficultyFrom == _unset
           ? this.difficultyFrom
           : difficultyFrom as int?,
-      difficultyTo:
-          difficultyTo == _unset ? this.difficultyTo : difficultyTo as int?,
+      difficultyTo: difficultyTo == _unset
+          ? this.difficultyTo
+          : difficultyTo as int?,
       sortField: sortField ?? this.sortField,
       sortAscending: sortAscending ?? this.sortAscending,
       page: page ?? (filtersChanged ? 1 : this.page),
@@ -105,8 +108,8 @@ class BuildQuery {
       sortAscending: sortAscending,
       page: int.tryParse(params['page'] ?? '') ?? 1,
       size: int.tryParse(params['size'] ?? '') ?? 10,
-      includeDeleted: params['includeDeleted'] == '1' ||
-          params['includeDeleted'] == 'true',
+      includeDeleted:
+          params['includeDeleted'] == '1' || params['includeDeleted'] == 'true',
     );
   }
 

@@ -34,13 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _busy = true);
     try {
-      await context.read<AuthNotifier>().login(
-            _username.text,
-            _password.text,
-          );
+      await context.read<AuthNotifier>().login(_username.text, _password.text);
       if (!mounted) return;
       final from = widget.from;
-      if (from != null && from.isNotEmpty && from != '/login' && from != '/register') {
+      if (from != null &&
+          from.isNotEmpty &&
+          from != '/login' &&
+          from != '/register') {
         context.go(from);
       } else {
         context.go('/');
@@ -88,8 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         labelText: 'Логин',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Введите логин' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Введите логин'
+                          : null,
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
@@ -101,6 +102,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         labelText: 'Пароль',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
+                          tooltip: _obscure
+                              ? 'Показать пароль'
+                              : 'Скрыть пароль',
                           onPressed: () => setState(() => _obscure = !_obscure),
                           icon: Icon(
                             _obscure ? Icons.visibility : Icons.visibility_off,
@@ -130,9 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: _busy
-                          ? null
-                          : () => context.go('/register'),
+                      onPressed: _busy ? null : () => context.go('/register'),
                       child: const Text('Создать аккаунт'),
                     ),
                   ],

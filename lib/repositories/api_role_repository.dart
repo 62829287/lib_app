@@ -51,85 +51,84 @@ class ApiRoleRepository implements RoleRepository {
 
   @override
   Future<Role?> findById(int id) => guardRead(() async {
-        try {
-          final response = await _dio.get<Map<String, dynamic>>('/roles/$id');
-          return Role.fromJson(response.data!);
-        } on DioException catch (e) {
-          if (e.response?.statusCode == 404 ||
-              e.error is NotFoundException) {
-            return null;
-          }
-          rethrow;
-        }
-      });
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/roles/$id');
+      return Role.fromJson(response.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.error is NotFoundException) {
+        return null;
+      }
+      rethrow;
+    }
+  });
 
   @override
   Future<Role> create(Role role) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/roles',
-          data: {'name': role.name, 'description': role.description},
-        );
-        invalidateCatalogCache();
-        return Role.fromJson(response.data!);
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/roles',
+      data: {'name': role.name, 'description': role.description},
+    );
+    invalidateCatalogCache();
+    return Role.fromJson(response.data!);
+  });
 
   @override
   Future<Role> update(Role role) => guard(() async {
-        final response = await _dio.put<Map<String, dynamic>>(
-          '/roles/${role.id}',
-          data: {'name': role.name, 'description': role.description},
-        );
-        invalidateCatalogCache();
-        return Role.fromJson(response.data!);
-      });
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/roles/${role.id}',
+      data: {'name': role.name, 'description': role.description},
+    );
+    invalidateCatalogCache();
+    return Role.fromJson(response.data!);
+  });
 
   @override
   Future<void> softDelete(int id) => guard(() async {
-        await _dio.delete('/roles/$id');
-        invalidateCatalogCache();
-      });
+    await _dio.delete('/roles/$id');
+    invalidateCatalogCache();
+  });
 
   @override
   Future<void> hardDelete(int id) => guard(() async {
-        await _dio.delete('/roles/$id', queryParameters: {'hard': true});
-        invalidateCatalogCache();
-      });
+    await _dio.delete('/roles/$id', queryParameters: {'hard': true});
+    invalidateCatalogCache();
+  });
 
   @override
   Future<void> restore(int id) => guard(() async {
-        await _dio.post('/roles/$id/restore');
-        invalidateCatalogCache();
-      });
+    await _dio.post('/roles/$id/restore');
+    invalidateCatalogCache();
+  });
 
   @override
   Future<int> softDeleteMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/roles/bulk-delete',
-          data: {'ids': ids},
-        );
-        invalidateCatalogCache();
-        return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/roles/bulk-delete',
+      data: {'ids': ids},
+    );
+    invalidateCatalogCache();
+    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<int> hardDeleteMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/roles/bulk-delete',
-          data: {'ids': ids, 'hard': true},
-        );
-        invalidateCatalogCache();
-        return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/roles/bulk-delete',
+      data: {'ids': ids, 'hard': true},
+    );
+    invalidateCatalogCache();
+    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<int> restoreMany(List<int> ids) => guard(() async {
-        final response = await _dio.post<Map<String, dynamic>>(
-          '/roles/bulk-restore',
-          data: {'ids': ids},
-        );
-        invalidateCatalogCache();
-        return (response.data?['restored'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/roles/bulk-restore',
+      data: {'ids': ids},
+    );
+    invalidateCatalogCache();
+    return (response.data?['restored'] as num?)?.toInt() ?? 0;
+  });
 
   @override
   Future<List<Role>> allActive() async {
@@ -148,9 +147,9 @@ class ApiRoleRepository implements RoleRepository {
 
   @override
   Future<int> countBuildsUsing(int roleId) => guardRead(() async {
-        final response = await _dio.get<Map<String, dynamic>>(
-          '/roles/$roleId/builds-count',
-        );
-        return (response.data?['count'] as num?)?.toInt() ?? 0;
-      });
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/roles/$roleId/builds-count',
+    );
+    return (response.data?['count'] as num?)?.toInt() ?? 0;
+  });
 }

@@ -40,26 +40,26 @@ class AppUser {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'nickname': nickname,
-        'email': email,
-        'region': region,
-        'steam': steam.toJson(),
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'nickname': nickname,
+    'email': email,
+    'region': region,
+    'steam': steam.toJson(),
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        nickname: json['nickname'] as String? ?? '',
-        email: json['email'] as String? ?? '',
-        region: json['region'] as String? ?? '',
-        steam: SteamProfile.fromJson(
-          json['steam'] is Map<String, dynamic>
-              ? json['steam'] as Map<String, dynamic>
-              : null,
-        ),
-        deletedAt: json['deletedAt'] == null
-            ? null
-            : DateTime.tryParse('${json['deletedAt']}'),
-      );
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    nickname: json['nickname'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    region: json['region'] as String? ?? '',
+    steam: SteamProfile.fromJson(
+      json['steam'] is Map<String, dynamic>
+          ? json['steam'] as Map<String, dynamic>
+          : null,
+    ),
+    deletedAt: json['deletedAt'] == null
+        ? null
+        : DateTime.tryParse('${json['deletedAt']}'),
+  );
 }

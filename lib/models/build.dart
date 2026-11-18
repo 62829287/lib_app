@@ -57,32 +57,32 @@ class Build {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'code': code,
-        'patch': patch,
-        'difficulty': difficulty,
-        'heroId': heroId,
-        'proPlayerIds': proPlayerIds,
-        'roleIds': roleIds,
-        'picks': picks,
-        'wins': wins,
-        'deletedAt': deletedAt?.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'code': code,
+    'patch': patch,
+    'difficulty': difficulty,
+    'heroId': heroId,
+    'proPlayerIds': proPlayerIds,
+    'roleIds': roleIds,
+    'picks': picks,
+    'wins': wins,
+    'deletedAt': deletedAt?.toIso8601String(),
+  };
 
   factory Build.fromJson(Map<String, dynamic> json) => Build(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        title: json['title'] as String? ?? '',
-        code: json['code'] as String? ?? '',
-        patch: json['patch'] as String? ?? '',
-        difficulty: (json['difficulty'] as num?)?.toInt() ?? 1,
-        heroId: (json['heroId'] as num?)?.toInt() ?? 0,
-        proPlayerIds: _toIntList(json['proPlayerIds']),
-        roleIds: _toIntList(json['roleIds']),
-        picks: (json['picks'] as num?)?.toInt() ?? 0,
-        wins: (json['wins'] as num?)?.toInt() ?? 0,
-        deletedAt: _parseDate(json['deletedAt']),
-      );
+    id: (json['id'] as num?)?.toInt() ?? 0,
+    title: json['title'] as String? ?? '',
+    code: json['code'] as String? ?? '',
+    patch: json['patch'] as String? ?? '',
+    difficulty: (json['difficulty'] as num?)?.toInt() ?? 1,
+    heroId: (json['heroId'] as num?)?.toInt() ?? 0,
+    proPlayerIds: _toIntList(json['proPlayerIds']),
+    roleIds: _toIntList(json['roleIds']),
+    picks: (json['picks'] as num?)?.toInt() ?? 0,
+    wins: (json['wins'] as num?)?.toInt() ?? 0,
+    deletedAt: _parseDate(json['deletedAt']),
+  );
 }
 
 List<int> _toIntList(dynamic value) {

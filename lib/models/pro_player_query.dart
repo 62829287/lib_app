@@ -72,8 +72,8 @@ class ProPlayerQuery {
       sortAscending: sortAscending,
       page: int.tryParse(params['page'] ?? '') ?? 1,
       size: int.tryParse(params['size'] ?? '') ?? 10,
-      includeDeleted: params['includeDeleted'] == '1' ||
-          params['includeDeleted'] == 'true',
+      includeDeleted:
+          params['includeDeleted'] == '1' || params['includeDeleted'] == 'true',
     );
   }
 

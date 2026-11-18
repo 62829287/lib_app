@@ -141,15 +141,13 @@ class EntityFormState extends State<EntityForm> {
     } on ConflictException catch (e) {
       if (!mounted) return;
       setState(() => _formError = e.message);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => _formError = e.message);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -288,10 +286,11 @@ class EntityFormState extends State<EntityForm> {
           keyboardType: field.type == EntityFieldType.number
               ? TextInputType.number
               : field.type == EntityFieldType.email
-                  ? TextInputType.emailAddress
-                  : TextInputType.text,
-          maxLines:
-              field.type == EntityFieldType.multiline ? field.maxLines : 1,
+              ? TextInputType.emailAddress
+              : TextInputType.text,
+          maxLines: field.type == EntityFieldType.multiline
+              ? field.maxLines
+              : 1,
           decoration: InputDecoration(labelText: field.label),
           validator: (_) => _fieldErrors[field.key],
           onChanged: (v) => _setValue(field.key, v),
@@ -315,8 +314,9 @@ class EntityFormState extends State<EntityForm> {
       case EntityFieldType.multiChip:
         final options =
             field.chipItems?.call() ?? const <({int id, String label})>[];
-        final selected =
-            List<int>.from((_values[field.key] as List?) ?? const []);
+        final selected = List<int>.from(
+          (_values[field.key] as List?) ?? const [],
+        );
         return FormField<List<int>>(
           initialValue: selected,
           autovalidateMode: AutovalidateMode.onUserInteraction,
