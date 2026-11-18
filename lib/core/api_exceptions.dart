@@ -78,8 +78,7 @@ ApiException mapDioError(DioException e) {
       const NetworkException('Сервер не ответил вовремя.'),
     DioExceptionType.connectionError =>
       const NetworkException(
-        'Не удалось соединиться с сервером. '
-        'Если сервер запущен, откройте консоль браузера и проверьте наличие ошибки CORS.',
+        'Не удалось соединиться с сервером.'
       ),
     DioExceptionType.cancel => const RequestCancelledException(),
     DioExceptionType.badResponse => mapHttpError(

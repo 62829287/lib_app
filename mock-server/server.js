@@ -1,9 +1,28 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const seed = require('./seed');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const JWT_SECRET = process.env.JWT_SECRET || 'dota-builds-dev-secret';
+
+function parseTtlSeconds() {
+  const idx = process.argv.indexOf('--ttl');
+  if (idx >= 0 && process.argv[idx + 1]) {
+    const n = Number(process.argv[idx + 1]);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  if (process.env.ACCESS_TTL) {
+    const n = Number(process.env.ACCESS_TTL);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 900;
+}
+
+const ACCESS_TTL_SEC = parseTtlSeconds();
+const REFRESH_TTL_SEC = 60 * 60 * 24 * 7;
+const ROLE_LEVEL = { viewer: 1, editor: 2, admin: 3 };
 
 const db = {
   roles: structuredClone(seed.roles),
@@ -12,6 +31,104 @@ const db = {
   builds: structuredClone(seed.builds),
   users: structuredClone(seed.users),
 };
+
+const authAccounts = [
+  {
+    id: 1,
+    username: 'reader',
+    displayName: 'Читатель',
+    password: 'reader123!',
+    role: 'viewer',
+  },
+  {
+    id: 2,
+    username: 'editor',
+    displayName: 'Редактор',
+    password: 'editor123!',
+    role: 'editor',
+  },
+  {
+    id: 3,
+    username: 'admin',
+    displayName: 'Админ',
+    password: 'admin123!',
+    role: 'admin',
+  },
+];
+
+function publicUser(account) {
+  return {
+    id: account.id,
+    username: account.username,
+    displayName: account.displayName,
+    role: account.role,
+  };
+}
+
+function signAccess(account) {
+  return jwt.sign(
+    {
+      sub: account.id,
+      username: account.username,
+      role: account.role,
+      typ: 'access',
+    },
+    JWT_SECRET,
+    { expiresIn: ACCESS_TTL_SEC },
+  );
+}
+
+function signRefresh(account) {
+  return jwt.sign(
+    {
+      sub: account.id,
+      username: account.username,
+      role: account.role,
+      typ: 'refresh',
+    },
+    JWT_SECRET,
+    { expiresIn: REFRESH_TTL_SEC },
+  );
+}
+
+function issueTokens(account) {
+  return {
+    accessToken: signAccess(account),
+    refreshToken: signRefresh(account),
+    user: publicUser(account),
+  };
+}
+
+function requireAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return res.status(401).json({ message: 'Требуется вход в систему.' });
+  }
+  try {
+    const payload = jwt.verify(match[1], JWT_SECRET);
+    if (payload.typ && payload.typ !== 'access') {
+      return res.status(401).json({ message: 'Неверный тип токена.' });
+    }
+    const account = authAccounts.find((a) => a.id === Number(payload.sub));
+    if (!account) {
+      return res.status(401).json({ message: 'Пользователь не найден.' });
+    }
+    req.auth = {
+      ...payload,
+      sub: account.id,
+      username: account.username,
+      role: account.role,
+    };
+    next();
+  } catch {
+    return res.status(401).json({ message: 'Сессия истекла. Войдите снова.' });
+  }
+}
+
+function roleLevel(role) {
+  return ROLE_LEVEL[role] || 0;
+}
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
@@ -24,7 +141,12 @@ app.get('/api', (_req, res) => {
   res.json({
     ok: true,
     message: 'Mock API is running',
+    accessTtlSec: ACCESS_TTL_SEC,
     endpoints: [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/refresh',
+      '/api/auth/me',
       '/api/builds',
       '/api/heroes',
       '/api/roles',
@@ -51,6 +173,141 @@ app.use('/api', (req, res, next) => {
   } else {
     run();
   }
+});
+
+function passwordStrong(password) {
+  return (
+    typeof password === 'string' &&
+    password.length >= 8 &&
+    /\d/.test(password) &&
+    /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;/]/.test(password)
+  );
+}
+
+app.post('/api/auth/login', (req, res) => {
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '');
+  if (!username || !password) {
+    return res.status(422).json({
+      message: 'Ошибка валидации',
+      errors: {
+        ...(username ? {} : { username: 'Логин обязателен' }),
+        ...(password ? {} : { password: 'Пароль обязателен' }),
+      },
+    });
+  }
+  const account = authAccounts.find(
+    (a) => a.username.toLowerCase() === username.toLowerCase(),
+  );
+  if (!account || account.password !== password) {
+    return res.status(401).json({ message: 'Неверный логин или пароль.' });
+  }
+  res.json(issueTokens(account));
+});
+
+app.post('/api/auth/register', (req, res) => {
+  const username = String(req.body?.username || '').trim();
+  const displayName = String(req.body?.displayName || '').trim();
+  const password = String(req.body?.password || '');
+  const errors = {};
+  if (!username) errors.username = 'Логин обязателен';
+  else if (username.length < 3) errors.username = 'Логин: не меньше 3 символов';
+  else if (
+    authAccounts.some((a) => a.username.toLowerCase() === username.toLowerCase())
+  ) {
+    errors.username = 'Такой логин уже занят';
+  }
+  if (!displayName) errors.displayName = 'Имя обязательно';
+  if (!password) errors.password = 'Пароль обязателен';
+  else if (!passwordStrong(password)) {
+    errors.password =
+      'Пароль: не меньше 8 символов, цифра и спецсимвол';
+  }
+  if (Object.keys(errors).length) {
+    return res.status(422).json({ message: 'Ошибка валидации', errors });
+  }
+  const account = {
+    id: authAccounts.reduce((m, a) => Math.max(m, a.id), 0) + 1,
+    username,
+    displayName,
+    password,
+    role: 'viewer',
+  };
+  authAccounts.push(account);
+  res.status(201).json(issueTokens(account));
+});
+
+app.post('/api/auth/refresh', (req, res) => {
+  const refreshToken = String(req.body?.refreshToken || '');
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Нет refresh-токена.' });
+  }
+  try {
+    const payload = jwt.verify(refreshToken, JWT_SECRET);
+    if (payload.typ && payload.typ !== 'refresh') {
+      return res.status(401).json({ message: 'Неверный тип токена.' });
+    }
+    const account = authAccounts.find((a) => a.id === Number(payload.sub));
+    if (!account) {
+      return res.status(401).json({ message: 'Пользователь не найден.' });
+    }
+    res.json(issueTokens(account));
+  } catch {
+    return res.status(401).json({ message: 'Refresh-токен недействителен.' });
+  }
+});
+
+app.get('/api/auth/me', requireAuth, (req, res) => {
+  const account = authAccounts.find((a) => a.id === Number(req.auth.sub));
+  if (!account) {
+    return res.status(401).json({ message: 'Пользователь не найден.' });
+  }
+  res.json(publicUser(account));
+});
+
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth/')) return next();
+  return requireAuth(req, res, next);
+});
+
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth/')) return next();
+
+  const level = roleLevel(req.auth?.role);
+  const isUsers = req.path === '/users' || req.path.startsWith('/users/');
+  const isAccounts =
+    req.path === '/accounts' || req.path.startsWith('/accounts/');
+  if (isUsers || isAccounts) {
+    if (level < ROLE_LEVEL.admin) {
+      return res.status(403).json({
+        message: 'У Вас недостаточно прав для выполнения этого действия.',
+      });
+    }
+    return next();
+  }
+
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    return next();
+  }
+
+  const hardQuery = req.query.hard === 'true' || req.query.hard === '1';
+  const hardBody = !!(req.body && req.body.hard);
+  const isHard =
+    hardQuery ||
+    (hardBody && String(req.path).includes('bulk-delete'));
+
+  if (isHard && level < ROLE_LEVEL.admin) {
+    return res.status(403).json({
+      message: 'У Вас недостаточно прав для выполнения этого действия.',
+    });
+  }
+
+  if (level < ROLE_LEVEL.editor) {
+    return res.status(403).json({
+      message: 'У Вас недостаточно прав для выполнения этого действия.',
+    });
+  }
+  return next();
 });
 
 function nextId(list) {
@@ -739,6 +996,56 @@ app.post('/api/builds/bulk-delete', (req, res) => {
 app.post('/api/builds/bulk-restore', (req, res) => {
   const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
   res.json({ restored: bulkOp(db.builds, ids, (item) => restore(item)) });
+});
+
+app.get('/api/accounts', (req, res) => {
+  const search = String(req.query.search || '').trim().toLowerCase();
+  let list = authAccounts.map(publicUser);
+  if (search) {
+    list = list.filter(
+      (u) =>
+        u.username.toLowerCase().includes(search) ||
+        u.displayName.toLowerCase().includes(search) ||
+        u.role.toLowerCase().includes(search),
+    );
+  }
+  res.json(list);
+});
+
+app.patch('/api/accounts/:id', (req, res) => {
+  const account = authAccounts.find((a) => a.id === Number(req.params.id));
+  if (!account) {
+    return res.status(404).json({ message: 'Учётная запись не найдена.' });
+  }
+  const role = String(req.body?.role || '').trim().toLowerCase();
+  if (!ROLE_LEVEL[role]) {
+    return res.status(422).json({
+      message: 'Ошибка валидации',
+      errors: { role: 'Роль: viewer, editor или admin' },
+    });
+  }
+  if (account.id === Number(req.auth.sub) && role !== 'admin') {
+    const otherAdmins = authAccounts.filter(
+      (a) => a.id !== account.id && a.role === 'admin',
+    );
+    if (otherAdmins.length === 0) {
+      return res.status(409).json({
+        message: 'Нельзя снять роль администратора с единственного админа.',
+      });
+    }
+  }
+  account.role = role;
+  if (req.body?.displayName != null) {
+    const displayName = String(req.body.displayName).trim();
+    if (!displayName) {
+      return res.status(422).json({
+        message: 'Ошибка валидации',
+        errors: { displayName: 'Имя обязательно' },
+      });
+    }
+    account.displayName = displayName;
+  }
+  res.json(publicUser(account));
 });
 
 app.get('/api/users', (req, res) => {

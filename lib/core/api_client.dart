@@ -4,7 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'api_exceptions.dart';
 import 'config.dart';
 
-Dio buildDio({String? Function()? tokenProvider}) {
+typedef TokenProvider = String? Function();
+typedef TokenRefresher = Future<bool> Function();
+typedef AuthLostHandler = Future<void> Function();
+
+Dio buildDio({
+  TokenProvider? tokenProvider,
+  TokenRefresher? refreshTokens,
+  AuthLostHandler? onAuthLost,
+}) {
   final dio = Dio(
     BaseOptions(
       baseUrl: apiBaseUrl,
@@ -19,7 +27,7 @@ Dio buildDio({String? Function()? tokenProvider}) {
     InterceptorsWrapper(
       onRequest: (options, handler) {
         final token = tokenProvider?.call();
-        if (token != null) {
+        if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         if (kIsWeb) {
@@ -38,9 +46,7 @@ Dio buildDio({String? Function()? tokenProvider}) {
           }
         }
         if (kDebugMode) {
-          debugPrint(
-            '[API] → ${options.method} ${options.uri}',
-          );
+          debugPrint('[API] → ${options.method} ${options.uri}');
         }
         return handler.next(options);
       },
@@ -65,13 +71,43 @@ Dio buildDio({String? Function()? tokenProvider}) {
         }
         return handler.next(response);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
         if (kDebugMode) {
           debugPrint(
             '[API] сбой ${error.requestOptions.method} '
             '${error.requestOptions.uri}: ${error.type}',
           );
         }
+
+        final status = error.response?.statusCode;
+        final path = error.requestOptions.path;
+        final alreadyRetried = error.requestOptions.extra['auth_retried'] == true;
+        final isAuthPath = path.contains('/auth/');
+
+        if (status == 401 &&
+            !isAuthPath &&
+            !alreadyRetried &&
+            refreshTokens != null) {
+          try {
+            final ok = await refreshTokens();
+            if (!ok) {
+              await onAuthLost?.call();
+              return handler.reject(error);
+            }
+            final options = error.requestOptions;
+            options.extra['auth_retried'] = true;
+            final token = tokenProvider?.call();
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
+            final response = await dio.fetch(options);
+            return handler.resolve(response);
+          } catch (_) {
+            await onAuthLost?.call();
+            return handler.reject(error);
+          }
+        }
+
         return handler.next(error);
       },
     ),

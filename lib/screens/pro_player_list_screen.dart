@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/breakpoints.dart';
 import '../models/pro_player.dart';
 import '../models/pro_player_query.dart';
+import '../state/auth_notifier.dart';
 import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
 import '../state/pro_player_list_notifier.dart';
@@ -93,46 +94,53 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
     });
   }
 
-  List<Widget> _rowActions(ProPlayer player, ProPlayerListNotifier n) {
+  List<Widget> _rowActions(
+    ProPlayer player,
+    ProPlayerListNotifier n, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     return [
       IconButton(
         tooltip: 'Открыть',
         icon: const Icon(Icons.open_in_new, size: 20),
         onPressed: () => context.go('/pros/${player.id}'),
       ),
-      IconButton(
-        tooltip: 'Изменить',
-        icon: const Icon(Icons.edit_outlined, size: 20),
-        onPressed: () => context.go('/pros/${player.id}/edit'),
-      ),
-      if (player.isDeleted)
+      if (canEdit)
+        IconButton(
+          tooltip: 'Изменить',
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          onPressed: () => context.go('/pros/${player.id}/edit'),
+        ),
+      if (canEdit && player.isDeleted)
         IconButton(
           tooltip: 'Восстановить',
           icon: const Icon(Icons.restore, size: 20),
           onPressed: () => n.restore(player.id),
         )
-      else ...[
+      else if (canEdit) ...[
         IconButton(
           tooltip: 'В корзину',
           icon: const Icon(Icons.delete_outline, size: 20),
           onPressed: () => n.softDelete(player.id),
         ),
-        IconButton(
-          tooltip: 'Удалить навсегда',
-          icon: const Icon(Icons.delete_forever_outlined, size: 20),
-          onPressed: () async {
-            final ok = await confirmAction(
-              context,
-              title: 'Удалить навсегда?',
-              message:
-                  'Игрок «${player.nickname}» будет стёрт без восстановления.',
-              confirmLabel: 'Стереть',
-            );
-            if (ok && context.mounted) {
-              await runApiAction(context, () => n.hardDelete(player.id));
-            }
-          },
-        ),
+        if (canHard)
+          IconButton(
+            tooltip: 'Удалить навсегда',
+            icon: const Icon(Icons.delete_forever_outlined, size: 20),
+            onPressed: () async {
+              final ok = await confirmAction(
+                context,
+                title: 'Удалить навсегда?',
+                message:
+                    'Игрок «${player.nickname}» будет стёрт без восстановления.',
+                confirmLabel: 'Стереть',
+              );
+              if (ok && context.mounted) {
+                await runApiAction(context, () => n.hardDelete(player.id));
+              }
+            },
+          ),
       ],
     ];
   }
@@ -141,6 +149,9 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final notifier = context.watch<ProPlayerListNotifier>();
+    final auth = context.watch<AuthNotifier>();
+    final canEdit = auth.canEditCatalog();
+    final canHard = auth.canHardDelete();
     final catalog = context.watch<CatalogNotifier>();
     final query = notifier.query;
     final useCards = useCardListOf(context);
@@ -156,11 +167,12 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
             Expanded(
               child: Text('Про-игроки', style: theme.textTheme.headlineSmall),
             ),
-            FilledButton.icon(
-              onPressed: () => context.go('/pros/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('Добавить'),
-            ),
+            if (canEdit)
+              FilledButton.icon(
+                onPressed: () => context.go('/pros/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить'),
+              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -205,17 +217,25 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                     _replaceQuery(query.copyWith(country: value)),
               ),
             ),
-            FilterChip(
-              label: const Text('В архиве'),
-              selected: query.includeDeleted,
-              onSelected: (value) =>
-                  _replaceQuery(query.copyWith(includeDeleted: value)),
-            ),
+            if (canEdit)
+              FilterChip(
+                label: const Text('В архиве'),
+                selected: query.includeDeleted,
+                onSelected: (value) =>
+                    _replaceQuery(query.copyWith(includeDeleted: value)),
+              ),
           ],
         ),
         const SizedBox(height: 12),
-        if (notifier.hasSelection) _selectionBar(notifier),
-        _buildBody(context, notifier, useCards),
+        if (canEdit && notifier.hasSelection)
+          _selectionBar(notifier, canHard: canHard),
+        _buildBody(
+          context,
+          notifier,
+          useCards,
+          canEdit: canEdit,
+          canHard: canHard,
+        ),
         const SizedBox(height: 16),
         if (notifier.status == LoadStatus.success)
           PaginationBar(
@@ -230,7 +250,7 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
     );
   }
 
-  Widget _selectionBar(ProPlayerListNotifier n) {
+  Widget _selectionBar(ProPlayerListNotifier n, {required bool canHard}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Wrap(
@@ -257,19 +277,20 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
               icon: const Icon(Icons.restore),
               label: const Text('Восстановить'),
             ),
-          FilledButton.icon(
-            onPressed: () async {
-              if (await confirmAction(context,
-                  title: 'Удалить навсегда?',
-                  message: 'Физическое удаление',
-                  confirmLabel: 'Стереть')) {
-                if (!context.mounted) return;
-                await runApiAction(context, n.hardDeleteSelected);
-              }
-            },
-            icon: const Icon(Icons.delete_forever_outlined),
-            label: const Text('Удалить навсегда'),
-          ),
+          if (canHard)
+            FilledButton.icon(
+              onPressed: () async {
+                if (await confirmAction(context,
+                    title: 'Удалить навсегда?',
+                    message: 'Физическое удаление',
+                    confirmLabel: 'Стереть')) {
+                  if (!context.mounted) return;
+                  await runApiAction(context, n.hardDeleteSelected);
+                }
+              },
+              icon: const Icon(Icons.delete_forever_outlined),
+              label: const Text('Удалить навсегда'),
+            ),
           TextButton(
             onPressed: n.clearSelection,
             child: const Text('Снять выделение'),
@@ -282,8 +303,10 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
   Widget _buildBody(
     BuildContext context,
     ProPlayerListNotifier notifier,
-    bool useCards,
-  ) {
+    bool useCards, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     switch (notifier.status) {
       case LoadStatus.idle:
       case LoadStatus.loading:
@@ -343,20 +366,21 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(value: 'open', child: Text('Открыть')),
-                        if (p.isDeleted)
+                        if (canEdit && p.isDeleted)
                           const PopupMenuItem(
                             value: 'restore',
                             child: Text('Восстановить'),
                           )
-                        else ...[
+                        else if (canEdit) ...[
                           const PopupMenuItem(
                             value: 'soft',
                             child: Text('В корзину'),
                           ),
-                          const PopupMenuItem(
-                            value: 'hard',
-                            child: Text('Удалить навсегда'),
-                          ),
+                          if (canHard)
+                            const PopupMenuItem(
+                              value: 'hard',
+                              child: Text('Удалить навсегда'),
+                            ),
                         ],
                       ],
                     ),
@@ -402,8 +426,8 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
           ],
           items: notifier.result.items,
           idOf: (p) => p.id,
-          selected: notifier.selected,
-          onToggleSelect: notifier.toggleSelection,
+          selected: canEdit ? notifier.selected : {},
+          onToggleSelect: canEdit ? notifier.toggleSelection : null,
           sortField: notifier.query.sortField,
           sortAscending: notifier.query.sortAscending,
           onSort: (field) => _replaceQuery(
@@ -416,7 +440,12 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
             ),
           ),
           onRowTap: (p) => context.go('/pros/${p.id}'),
-          actions: (p) => _rowActions(p, notifier),
+          actions: (p) => _rowActions(
+            p,
+            notifier,
+            canEdit: canEdit,
+            canHard: canHard,
+          ),
         );
     }
   }

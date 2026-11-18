@@ -7,20 +7,26 @@ import 'core/router.dart';
 import 'core/scroll_behavior.dart';
 import 'core/theme.dart';
 import 'repositories/app_user_repository.dart';
+import 'repositories/auth_api.dart';
 import 'repositories/build_repository.dart';
 import 'repositories/hero_repository.dart';
 import 'repositories/pro_player_repository.dart';
 import 'repositories/role_repository.dart';
 import 'state/app_user_list_notifier.dart';
+import 'state/auth_accounts_notifier.dart';
+import 'state/auth_notifier.dart';
 import 'state/build_list_notifier.dart';
 import 'state/catalog_notifier.dart';
 import 'state/hero_list_notifier.dart';
 import 'state/pro_player_list_notifier.dart';
 import 'state/role_list_notifier.dart';
+import 'widgets/session_guard.dart';
 
 class LibraryApp extends StatelessWidget {
   const LibraryApp({
     super.key,
+    required this.authNotifier,
+    required this.authApi,
     required this.buildRepository,
     required this.proPlayerRepository,
     required this.roleRepository,
@@ -28,6 +34,8 @@ class LibraryApp extends StatelessWidget {
     required this.appUserRepository,
   });
 
+  final AuthNotifier authNotifier;
+  final AuthApi authApi;
   final BuildRepository buildRepository;
   final ProPlayerRepository proPlayerRepository;
   final RoleRepository roleRepository;
@@ -38,6 +46,8 @@ class LibraryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<AuthNotifier>.value(value: authNotifier),
+        Provider<AuthApi>.value(value: authApi),
         Provider<BuildRepository>.value(value: buildRepository),
         Provider<ProPlayerRepository>.value(value: proPlayerRepository),
         Provider<RoleRepository>.value(value: roleRepository),
@@ -48,7 +58,7 @@ class LibraryApp extends StatelessWidget {
             roles: context.read<RoleRepository>(),
             heroes: context.read<HeroRepository>(),
             proPlayers: context.read<ProPlayerRepository>(),
-          )..load(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (context) =>
@@ -70,6 +80,10 @@ class LibraryApp extends StatelessWidget {
           create: (context) =>
               AppUserListNotifier(context.read<AppUserRepository>()),
         ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              AuthAccountsNotifier(context.read<AuthApi>()),
+        ),
       ],
       child: const _LibraryMaterialApp(),
     );
@@ -84,16 +98,31 @@ class _LibraryMaterialApp extends StatefulWidget {
 }
 
 class _LibraryMaterialAppState extends State<_LibraryMaterialApp> {
-  late final GoRouter _router = createRouter();
+  GoRouter? _router;
+  AuthNotifier? _boundAuth;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.read<AuthNotifier>();
+    if (!identical(_boundAuth, auth)) {
+      _boundAuth = auth;
+      _router = createRouter(auth);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final router = _router;
+    if (router == null) {
+      return const SizedBox.shrink();
+    }
     return MaterialApp.router(
       title: 'Dota Builds',
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(),
       themeMode: ThemeMode.light,
-      routerConfig: _router,
+      routerConfig: router,
       scrollBehavior: const AppScrollBehavior(),
       locale: const Locale('ru'),
       supportedLocales: const [Locale('ru')],
@@ -102,6 +131,9 @@ class _LibraryMaterialAppState extends State<_LibraryMaterialApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) => SessionGuard(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

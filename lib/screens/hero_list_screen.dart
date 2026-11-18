@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/breakpoints.dart';
 import '../models/dota_hero.dart';
 import '../models/list_query.dart';
+import '../state/auth_notifier.dart';
 import '../state/catalog_notifier.dart';
 import '../state/hero_list_notifier.dart';
 import '../state/load_status.dart';
@@ -97,35 +98,42 @@ class _HeroListScreenState extends State<HeroListScreen> {
     }
   }
 
-  List<Widget> _rowActions(DotaHero hero, HeroListNotifier n) {
+  List<Widget> _rowActions(
+    DotaHero hero,
+    HeroListNotifier n, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     return [
       IconButton(
         tooltip: 'Открыть',
         icon: const Icon(Icons.open_in_new, size: 20),
         onPressed: () => context.go('/heroes/${hero.id}'),
       ),
-      IconButton(
-        tooltip: 'Изменить',
-        icon: const Icon(Icons.edit_outlined, size: 20),
-        onPressed: () => context.go('/heroes/${hero.id}/edit'),
-      ),
-      if (hero.isDeleted)
+      if (canEdit)
+        IconButton(
+          tooltip: 'Изменить',
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          onPressed: () => context.go('/heroes/${hero.id}/edit'),
+        ),
+      if (canEdit && hero.isDeleted)
         IconButton(
           tooltip: 'Восстановить',
           icon: const Icon(Icons.restore, size: 20),
           onPressed: () => n.restore(hero.id),
         )
-      else ...[
+      else if (canEdit) ...[
         IconButton(
           tooltip: 'В корзину',
           icon: const Icon(Icons.delete_outline, size: 20),
           onPressed: () => _softDeleteOne(hero, n),
         ),
-        IconButton(
-          tooltip: 'Удалить навсегда',
-          icon: const Icon(Icons.delete_forever_outlined, size: 20),
-          onPressed: () => _hardDeleteOne(hero, n),
-        ),
+        if (canHard)
+          IconButton(
+            tooltip: 'Удалить навсегда',
+            icon: const Icon(Icons.delete_forever_outlined, size: 20),
+            onPressed: () => _hardDeleteOne(hero, n),
+          ),
       ],
     ];
   }
@@ -133,6 +141,9 @@ class _HeroListScreenState extends State<HeroListScreen> {
   @override
   Widget build(BuildContext context) {
     final n = context.watch<HeroListNotifier>();
+    final auth = context.watch<AuthNotifier>();
+    final canEdit = auth.canEditCatalog();
+    final canHard = auth.canHardDelete();
     final q = n.query;
     final cards = useCardListOf(context);
 
@@ -143,11 +154,12 @@ class _HeroListScreenState extends State<HeroListScreen> {
             Expanded(
               child: Text('Герои', style: Theme.of(context).textTheme.headlineSmall),
             ),
-            FilledButton.icon(
-              onPressed: () => context.go('/heroes/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('Добавить'),
-            ),
+            if (canEdit)
+              FilledButton.icon(
+                onPressed: () => context.go('/heroes/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить'),
+              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -164,14 +176,16 @@ class _HeroListScreenState extends State<HeroListScreen> {
             });
           },
         ),
-        const SizedBox(height: 8),
-        FilterChip(
-          label: const Text('В архиве'),
-          selected: q.includeDeleted,
-          onSelected: (v) => _replace(q.copyWith(includeDeleted: v)),
-        ),
+        if (canEdit) ...[
+          const SizedBox(height: 8),
+          FilterChip(
+            label: const Text('В архиве'),
+            selected: q.includeDeleted,
+            onSelected: (v) => _replace(q.copyWith(includeDeleted: v)),
+          ),
+        ],
         const SizedBox(height: 12),
-        if (n.hasSelection)
+        if (canEdit && n.hasSelection)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Wrap(
@@ -192,11 +206,12 @@ class _HeroListScreenState extends State<HeroListScreen> {
                     icon: const Icon(Icons.restore),
                     label: const Text('Восстановить'),
                   ),
-                FilledButton.icon(
-                  onPressed: () => _deleteSelected(soft: false),
-                  icon: const Icon(Icons.delete_forever_outlined),
-                  label: const Text('Удалить навсегда'),
-                ),
+                if (canHard)
+                  FilledButton.icon(
+                    onPressed: () => _deleteSelected(soft: false),
+                    icon: const Icon(Icons.delete_forever_outlined),
+                    label: const Text('Удалить навсегда'),
+                  ),
                 TextButton(
                   onPressed: n.clearSelection,
                   child: const Text('Снять выделение'),
@@ -204,7 +219,7 @@ class _HeroListScreenState extends State<HeroListScreen> {
               ],
             ),
           ),
-        _body(n, cards),
+        _body(n, cards, canEdit: canEdit, canHard: canHard),
         if (n.status == LoadStatus.success)
           PaginationBar(
             result: n.result,
@@ -216,7 +231,12 @@ class _HeroListScreenState extends State<HeroListScreen> {
     );
   }
 
-  Widget _body(HeroListNotifier n, bool cards) {
+  Widget _body(
+    HeroListNotifier n,
+    bool cards, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     switch (n.status) {
       case LoadStatus.idle:
       case LoadStatus.loading:
@@ -269,24 +289,26 @@ class _HeroListScreenState extends State<HeroListScreen> {
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(value: 'open', child: Text('Открыть')),
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Изменить'),
-                        ),
-                        if (h.isDeleted)
+                        if (canEdit)
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Изменить'),
+                          ),
+                        if (canEdit && h.isDeleted)
                           const PopupMenuItem(
                             value: 'restore',
                             child: Text('Восстановить'),
                           )
-                        else ...[
+                        else if (canEdit) ...[
                           const PopupMenuItem(
                             value: 'soft',
                             child: Text('В корзину'),
                           ),
-                          const PopupMenuItem(
-                            value: 'hard',
-                            child: Text('Удалить навсегда'),
-                          ),
+                          if (canHard)
+                            const PopupMenuItem(
+                              value: 'hard',
+                              child: Text('Удалить навсегда'),
+                            ),
                         ],
                       ],
                     ),
@@ -321,8 +343,8 @@ class _HeroListScreenState extends State<HeroListScreen> {
           ],
           items: n.result.items,
           idOf: (h) => h.id,
-          selected: n.selected,
-          onToggleSelect: n.toggleSelection,
+          selected: canEdit ? n.selected : {},
+          onToggleSelect: canEdit ? n.toggleSelection : null,
           sortField: n.query.sortField,
           sortAscending: n.query.sortAscending,
           onSort: (f) => _replace(
@@ -334,7 +356,12 @@ class _HeroListScreenState extends State<HeroListScreen> {
             ),
           ),
           onRowTap: (h) => context.go('/heroes/${h.id}'),
-          actions: (h) => _rowActions(h, n),
+          actions: (h) => _rowActions(
+            h,
+            n,
+            canEdit: canEdit,
+            canHard: canHard,
+          ),
         );
     }
   }

@@ -8,6 +8,14 @@ Future<void> runApiAction(
 ) async {
   try {
     await action();
+  } on ForbiddenException catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
   } on ConflictException catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

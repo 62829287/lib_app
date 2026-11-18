@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/breakpoints.dart';
 import '../models/build.dart';
 import '../models/build_query.dart';
+import '../state/auth_notifier.dart';
 import '../state/build_list_notifier.dart';
 import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
@@ -138,10 +139,62 @@ class _BuildListScreenState extends State<BuildListScreen> {
     if (ok) await notifier.restoreSelected();
   }
 
+  List<Widget> _rowActions(
+    Build build,
+    BuildListNotifier notifier, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
+    return [
+      IconButton(
+        tooltip: 'Открыть',
+        icon: const Icon(Icons.open_in_new, size: 20),
+        onPressed: () => context.go('/builds/${build.id}'),
+      ),
+      if (canEdit)
+        IconButton(
+          tooltip: 'Изменить',
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          onPressed: () => context.go('/builds/${build.id}/edit'),
+        ),
+      if (canEdit && build.isDeleted)
+        IconButton(
+          tooltip: 'Восстановить',
+          icon: const Icon(Icons.restore, size: 20),
+          onPressed: () => notifier.restore(build.id),
+        )
+      else if (canEdit) ...[
+        IconButton(
+          tooltip: 'В корзину',
+          icon: const Icon(Icons.delete_outline, size: 20),
+          onPressed: () => notifier.softDelete(build.id),
+        ),
+        if (canHard)
+          IconButton(
+            tooltip: 'Удалить навсегда',
+            icon: const Icon(Icons.delete_forever_outlined, size: 20),
+            onPressed: () async {
+              final ok = await confirmAction(
+                context,
+                title: 'Удалить навсегда?',
+                message:
+                    'Сборка «${build.title}» будет стёрта без восстановления.',
+                confirmLabel: 'Стереть',
+              );
+              if (ok) await notifier.hardDelete(build.id);
+            },
+          ),
+      ],
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final notifier = context.watch<BuildListNotifier>();
+    final auth = context.watch<AuthNotifier>();
+    final canEdit = auth.canEditCatalog();
+    final canHard = auth.canHardDelete();
     final catalog = context.watch<CatalogNotifier>();
     final query = notifier.query;
     final useCards = useCardListOf(context);
@@ -158,11 +211,12 @@ class _BuildListScreenState extends State<BuildListScreen> {
             Expanded(
               child: Text('Сборки', style: theme.textTheme.headlineSmall),
             ),
-            FilledButton.icon(
-              onPressed: () => context.go('/builds/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('Добавить'),
-            ),
+            if (canEdit)
+              FilledButton.icon(
+                onPressed: () => context.go('/builds/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить'),
+              ),
           ],
         ),
         const SizedBox(height: 16),
@@ -257,16 +311,17 @@ class _BuildListScreenState extends State<BuildListScreen> {
                 ),
               ),
             ),
-            FilterChip(
-              label: const Text('В архиве'),
-              selected: query.includeDeleted,
-              onSelected: (value) =>
-                  _replaceQuery(query.copyWith(includeDeleted: value)),
-            ),
+            if (canEdit)
+              FilterChip(
+                label: const Text('В архиве'),
+                selected: query.includeDeleted,
+                onSelected: (value) =>
+                    _replaceQuery(query.copyWith(includeDeleted: value)),
+              ),
           ],
         ),
         const SizedBox(height: 12),
-        if (notifier.hasSelection)
+        if (canEdit && notifier.hasSelection)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Wrap(
@@ -287,11 +342,12 @@ class _BuildListScreenState extends State<BuildListScreen> {
                     icon: const Icon(Icons.restore),
                     label: const Text('Восстановить'),
                   ),
-                FilledButton.icon(
-                  onPressed: () => _confirmHardDeleteSelected(notifier),
-                  icon: const Icon(Icons.delete_forever_outlined),
-                  label: const Text('Удалить навсегда'),
-                ),
+                if (canHard)
+                  FilledButton.icon(
+                    onPressed: () => _confirmHardDeleteSelected(notifier),
+                    icon: const Icon(Icons.delete_forever_outlined),
+                    label: const Text('Удалить навсегда'),
+                  ),
                 TextButton(
                   onPressed: notifier.clearSelection,
                   child: const Text('Снять выделение'),
@@ -299,7 +355,14 @@ class _BuildListScreenState extends State<BuildListScreen> {
               ],
             ),
           ),
-        _buildBody(context, notifier, catalog, useCards),
+        _buildBody(
+          context,
+          notifier,
+          catalog,
+          useCards,
+          canEdit: canEdit,
+          canHard: canHard,
+        ),
         const SizedBox(height: 16),
         if (notifier.status == LoadStatus.success)
           PaginationBar(
@@ -318,8 +381,10 @@ class _BuildListScreenState extends State<BuildListScreen> {
     BuildContext context,
     BuildListNotifier notifier,
     CatalogNotifier catalog,
-    bool useCards,
-  ) {
+    bool useCards, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     switch (notifier.status) {
       case LoadStatus.idle:
       case LoadStatus.loading:
@@ -346,6 +411,8 @@ class _BuildListScreenState extends State<BuildListScreen> {
                 _BuildCard(
                   item: build,
                   heroName: catalog.heroName(build.heroId),
+                  canEdit: canEdit,
+                  canHard: canHard,
                   selected: notifier.selected.contains(build.id),
                   onToggle: () => notifier.toggleSelection(build.id),
                   onOpen: () => context.go('/builds/${build.id}'),
@@ -409,8 +476,8 @@ class _BuildListScreenState extends State<BuildListScreen> {
           ],
           items: notifier.result.items,
           idOf: (b) => b.id,
-          selected: notifier.selected,
-          onToggleSelect: notifier.toggleSelection,
+          selected: canEdit ? notifier.selected : {},
+          onToggleSelect: canEdit ? notifier.toggleSelection : null,
           sortField: notifier.query.sortField,
           sortAscending: notifier.query.sortAscending,
           onSort: (field) {
@@ -426,45 +493,12 @@ class _BuildListScreenState extends State<BuildListScreen> {
             );
           },
           onRowTap: (build) => context.go('/builds/${build.id}'),
-          actions: (build) => [
-            IconButton(
-              tooltip: 'Открыть',
-              icon: const Icon(Icons.open_in_new, size: 20),
-              onPressed: () => context.go('/builds/${build.id}'),
-            ),
-            IconButton(
-              tooltip: 'Изменить',
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              onPressed: () => context.go('/builds/${build.id}/edit'),
-            ),
-            if (build.isDeleted)
-              IconButton(
-                tooltip: 'Восстановить',
-                icon: const Icon(Icons.restore, size: 20),
-                onPressed: () => notifier.restore(build.id),
-              )
-            else ...[
-              IconButton(
-                tooltip: 'В корзину',
-                icon: const Icon(Icons.delete_outline, size: 20),
-                onPressed: () => notifier.softDelete(build.id),
-              ),
-              IconButton(
-                tooltip: 'Удалить навсегда',
-                icon: const Icon(Icons.delete_forever_outlined, size: 20),
-                onPressed: () async {
-                  final ok = await confirmAction(
-                    context,
-                    title: 'Удалить навсегда?',
-                    message:
-                        'Сборка «${build.title}» будет стёрта без восстановления.',
-                    confirmLabel: 'Стереть',
-                  );
-                  if (ok) await notifier.hardDelete(build.id);
-                },
-              ),
-            ],
-          ],
+          actions: (build) => _rowActions(
+            build,
+            notifier,
+            canEdit: canEdit,
+            canHard: canHard,
+          ),
         );
     }
   }
@@ -474,6 +508,8 @@ class _BuildCard extends StatelessWidget {
   const _BuildCard({
     required this.item,
     required this.heroName,
+    required this.canEdit,
+    required this.canHard,
     required this.selected,
     required this.onToggle,
     required this.onOpen,
@@ -484,6 +520,8 @@ class _BuildCard extends StatelessWidget {
 
   final Build item;
   final String heroName;
+  final bool canEdit;
+  final bool canHard;
   final bool selected;
   final VoidCallback onToggle;
   final VoidCallback onOpen;
@@ -521,20 +559,21 @@ class _BuildCard extends StatelessWidget {
           },
           itemBuilder: (context) => [
             const PopupMenuItem(value: 'open', child: Text('Открыть')),
-            if (item.isDeleted)
+            if (canEdit && item.isDeleted)
               const PopupMenuItem(
                 value: 'restore',
                 child: Text('Восстановить'),
               )
-            else ...[
+            else if (canEdit) ...[
               const PopupMenuItem(
                 value: 'soft',
                 child: Text('В корзину'),
               ),
-              const PopupMenuItem(
-                value: 'hard',
-                child: Text('Удалить навсегда'),
-              ),
+              if (canHard)
+                const PopupMenuItem(
+                  value: 'hard',
+                  child: Text('Удалить навсегда'),
+                ),
             ],
           ],
         ),

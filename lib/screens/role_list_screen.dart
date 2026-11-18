@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/breakpoints.dart';
 import '../models/list_query.dart';
 import '../models/role.dart';
+import '../state/auth_notifier.dart';
 import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
 import '../state/role_list_notifier.dart';
@@ -70,35 +71,42 @@ class _RoleListScreenState extends State<RoleListScreen> {
     }
   }
 
-  List<Widget> _rowActions(Role role, RoleListNotifier n) {
+  List<Widget> _rowActions(
+    Role role,
+    RoleListNotifier n, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     return [
       IconButton(
         tooltip: 'Открыть',
         icon: const Icon(Icons.open_in_new, size: 20),
         onPressed: () => context.go('/roles/${role.id}'),
       ),
-      IconButton(
-        tooltip: 'Изменить',
-        icon: const Icon(Icons.edit_outlined, size: 20),
-        onPressed: () => context.go('/roles/${role.id}/edit'),
-      ),
-      if (role.isDeleted)
+      if (canEdit)
+        IconButton(
+          tooltip: 'Изменить',
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          onPressed: () => context.go('/roles/${role.id}/edit'),
+        ),
+      if (canEdit && role.isDeleted)
         IconButton(
           tooltip: 'Восстановить',
           icon: const Icon(Icons.restore, size: 20),
           onPressed: () => n.restore(role.id),
         )
-      else ...[
+      else if (canEdit) ...[
         IconButton(
           tooltip: 'В корзину',
           icon: const Icon(Icons.delete_outline, size: 20),
           onPressed: () => n.softDelete(role.id),
         ),
-        IconButton(
-          tooltip: 'Удалить навсегда',
-          icon: const Icon(Icons.delete_forever_outlined, size: 20),
-          onPressed: () => _hardDeleteOne(role, n),
-        ),
+        if (canHard)
+          IconButton(
+            tooltip: 'Удалить навсегда',
+            icon: const Icon(Icons.delete_forever_outlined, size: 20),
+            onPressed: () => _hardDeleteOne(role, n),
+          ),
       ],
     ];
   }
@@ -106,6 +114,9 @@ class _RoleListScreenState extends State<RoleListScreen> {
   @override
   Widget build(BuildContext context) {
     final n = context.watch<RoleListNotifier>();
+    final auth = context.watch<AuthNotifier>();
+    final canEdit = auth.canEditCatalog();
+    final canHard = auth.canHardDelete();
     final q = n.query;
     final cards = useCardListOf(context);
 
@@ -116,11 +127,12 @@ class _RoleListScreenState extends State<RoleListScreen> {
             Expanded(
               child: Text('Роли', style: Theme.of(context).textTheme.headlineSmall),
             ),
-            FilledButton.icon(
-              onPressed: () => context.go('/roles/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('Добавить'),
-            ),
+            if (canEdit)
+              FilledButton.icon(
+                onPressed: () => context.go('/roles/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить'),
+              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -137,15 +149,17 @@ class _RoleListScreenState extends State<RoleListScreen> {
             });
           },
         ),
-        const SizedBox(height: 8),
-        FilterChip(
-          label: const Text('В архиве'),
-          selected: q.includeDeleted,
-          onSelected: (v) => _replace(q.copyWith(includeDeleted: v)),
-        ),
+        if (canEdit) ...[
+          const SizedBox(height: 8),
+          FilterChip(
+            label: const Text('В архиве'),
+            selected: q.includeDeleted,
+            onSelected: (v) => _replace(q.copyWith(includeDeleted: v)),
+          ),
+        ],
         const SizedBox(height: 12),
-        if (n.hasSelection) _selectionBar(n),
-        _body(n, cards),
+        if (canEdit && n.hasSelection) _selectionBar(n, canHard: canHard),
+        _body(n, cards, canEdit: canEdit, canHard: canHard),
         if (n.status == LoadStatus.success)
           PaginationBar(
             result: n.result,
@@ -157,7 +171,7 @@ class _RoleListScreenState extends State<RoleListScreen> {
     );
   }
 
-  Widget _selectionBar(RoleListNotifier n) {
+  Widget _selectionBar(RoleListNotifier n, {required bool canHard}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Wrap(
@@ -184,19 +198,20 @@ class _RoleListScreenState extends State<RoleListScreen> {
               icon: const Icon(Icons.restore),
               label: const Text('Восстановить'),
             ),
-          FilledButton.icon(
-            onPressed: () async {
-              if (await confirmAction(context,
-                  title: 'Удалить навсегда?',
-                  message: 'Физическое удаление',
-                  confirmLabel: 'Стереть')) {
-                if (!context.mounted) return;
-                await runApiAction(context, n.hardDeleteSelected);
-              }
-            },
-            icon: const Icon(Icons.delete_forever_outlined),
-            label: const Text('Удалить навсегда'),
-          ),
+          if (canHard)
+            FilledButton.icon(
+              onPressed: () async {
+                if (await confirmAction(context,
+                    title: 'Удалить навсегда?',
+                    message: 'Физическое удаление',
+                    confirmLabel: 'Стереть')) {
+                  if (!context.mounted) return;
+                  await runApiAction(context, n.hardDeleteSelected);
+                }
+              },
+              icon: const Icon(Icons.delete_forever_outlined),
+              label: const Text('Удалить навсегда'),
+            ),
           TextButton(
             onPressed: n.clearSelection,
             child: const Text('Снять выделение'),
@@ -206,7 +221,12 @@ class _RoleListScreenState extends State<RoleListScreen> {
     );
   }
 
-  Widget _body(RoleListNotifier n, bool cards) {
+  Widget _body(
+    RoleListNotifier n,
+    bool cards, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     switch (n.status) {
       case LoadStatus.idle:
       case LoadStatus.loading:
@@ -259,24 +279,26 @@ class _RoleListScreenState extends State<RoleListScreen> {
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(value: 'open', child: Text('Открыть')),
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Изменить'),
-                        ),
-                        if (r.isDeleted)
+                        if (canEdit)
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Изменить'),
+                          ),
+                        if (canEdit && r.isDeleted)
                           const PopupMenuItem(
                             value: 'restore',
                             child: Text('Восстановить'),
                           )
-                        else ...[
+                        else if (canEdit) ...[
                           const PopupMenuItem(
                             value: 'soft',
                             child: Text('В корзину'),
                           ),
-                          const PopupMenuItem(
-                            value: 'hard',
-                            child: Text('Удалить навсегда'),
-                          ),
+                          if (canHard)
+                            const PopupMenuItem(
+                              value: 'hard',
+                              child: Text('Удалить навсегда'),
+                            ),
                         ],
                       ],
                     ),
@@ -306,8 +328,8 @@ class _RoleListScreenState extends State<RoleListScreen> {
           ],
           items: n.result.items,
           idOf: (r) => r.id,
-          selected: n.selected,
-          onToggleSelect: n.toggleSelection,
+          selected: canEdit ? n.selected : {},
+          onToggleSelect: canEdit ? n.toggleSelection : null,
           sortField: n.query.sortField,
           sortAscending: n.query.sortAscending,
           onSort: (f) => _replace(
@@ -319,7 +341,12 @@ class _RoleListScreenState extends State<RoleListScreen> {
             ),
           ),
           onRowTap: (r) => context.go('/roles/${r.id}'),
-          actions: (r) => _rowActions(r, n),
+          actions: (r) => _rowActions(
+            r,
+            n,
+            canEdit: canEdit,
+            canHard: canHard,
+          ),
         );
     }
   }

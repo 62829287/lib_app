@@ -8,6 +8,7 @@ import '../core/breakpoints.dart';
 import '../models/app_user.dart';
 import '../models/list_query.dart';
 import '../state/app_user_list_notifier.dart';
+import '../state/auth_notifier.dart';
 import '../state/catalog_notifier.dart';
 import '../state/load_status.dart';
 import '../widgets/confirm_dialog.dart';
@@ -70,35 +71,42 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
     if (ok) await n.hardDelete(user.id);
   }
 
-  List<Widget> _rowActions(AppUser user, AppUserListNotifier n) {
+  List<Widget> _rowActions(
+    AppUser user,
+    AppUserListNotifier n, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     return [
       IconButton(
         tooltip: 'Открыть',
         icon: const Icon(Icons.open_in_new, size: 20),
         onPressed: () => context.go('/users/${user.id}'),
       ),
-      IconButton(
-        tooltip: 'Изменить',
-        icon: const Icon(Icons.edit_outlined, size: 20),
-        onPressed: () => context.go('/users/${user.id}/edit'),
-      ),
-      if (user.isDeleted)
+      if (canEdit)
+        IconButton(
+          tooltip: 'Изменить',
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          onPressed: () => context.go('/users/${user.id}/edit'),
+        ),
+      if (canEdit && user.isDeleted)
         IconButton(
           tooltip: 'Восстановить',
           icon: const Icon(Icons.restore, size: 20),
           onPressed: () => n.restore(user.id),
         )
-      else ...[
+      else if (canEdit) ...[
         IconButton(
           tooltip: 'В корзину',
           icon: const Icon(Icons.delete_outline, size: 20),
           onPressed: () => n.softDelete(user.id),
         ),
-        IconButton(
-          tooltip: 'Удалить навсегда',
-          icon: const Icon(Icons.delete_forever_outlined, size: 20),
-          onPressed: () => _hardDeleteOne(user, n),
-        ),
+        if (canHard)
+          IconButton(
+            tooltip: 'Удалить навсегда',
+            icon: const Icon(Icons.delete_forever_outlined, size: 20),
+            onPressed: () => _hardDeleteOne(user, n),
+          ),
       ],
     ];
   }
@@ -106,6 +114,9 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
   @override
   Widget build(BuildContext context) {
     final n = context.watch<AppUserListNotifier>();
+    final auth = context.watch<AuthNotifier>();
+    final canEdit = auth.canManageUsers();
+    final canHard = auth.canHardDelete();
     final q = n.query;
     final cards = useCardListOf(context);
 
@@ -119,11 +130,12 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-            FilledButton.icon(
-              onPressed: () => context.go('/users/new'),
-              icon: const Icon(Icons.add),
-              label: const Text('Добавить'),
-            ),
+            if (canEdit)
+              FilledButton.icon(
+                onPressed: () => context.go('/users/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить'),
+              ),
           ],
         ),
         const SizedBox(height: 12),
@@ -140,14 +152,16 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
             });
           },
         ),
-        const SizedBox(height: 8),
-        FilterChip(
-          label: const Text('В архиве'),
-          selected: q.includeDeleted,
-          onSelected: (v) => _replace(q.copyWith(includeDeleted: v)),
-        ),
+        if (canEdit) ...[
+          const SizedBox(height: 8),
+          FilterChip(
+            label: const Text('В архиве'),
+            selected: q.includeDeleted,
+            onSelected: (v) => _replace(q.copyWith(includeDeleted: v)),
+          ),
+        ],
         const SizedBox(height: 12),
-        if (n.hasSelection)
+        if (canEdit && n.hasSelection)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Wrap(
@@ -174,18 +188,19 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                     icon: const Icon(Icons.restore),
                     label: const Text('Восстановить'),
                   ),
-                FilledButton.icon(
-                  onPressed: () async {
-                    if (await confirmAction(context,
-                        title: 'Удалить навсегда?',
-                        message: 'Физическое удаление',
-                        confirmLabel: 'Стереть')) {
-                      await n.hardDeleteSelected();
-                    }
-                  },
-                  icon: const Icon(Icons.delete_forever_outlined),
-                  label: const Text('Удалить навсегда'),
-                ),
+                if (canHard)
+                  FilledButton.icon(
+                    onPressed: () async {
+                      if (await confirmAction(context,
+                          title: 'Удалить навсегда?',
+                          message: 'Физическое удаление',
+                          confirmLabel: 'Стереть')) {
+                        await n.hardDeleteSelected();
+                      }
+                    },
+                    icon: const Icon(Icons.delete_forever_outlined),
+                    label: const Text('Удалить навсегда'),
+                  ),
                 TextButton(
                   onPressed: n.clearSelection,
                   child: const Text('Снять выделение'),
@@ -193,7 +208,7 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
               ],
             ),
           ),
-        _body(n, cards),
+        _body(n, cards, canEdit: canEdit, canHard: canHard),
         if (n.status == LoadStatus.success)
           PaginationBar(
             result: n.result,
@@ -205,7 +220,12 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
     );
   }
 
-  Widget _body(AppUserListNotifier n, bool cards) {
+  Widget _body(
+    AppUserListNotifier n,
+    bool cards, {
+    required bool canEdit,
+    required bool canHard,
+  }) {
     switch (n.status) {
       case LoadStatus.idle:
       case LoadStatus.loading:
@@ -258,24 +278,26 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
                       },
                       itemBuilder: (context) => [
                         const PopupMenuItem(value: 'open', child: Text('Открыть')),
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Изменить'),
-                        ),
-                        if (u.isDeleted)
+                        if (canEdit)
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Изменить'),
+                          ),
+                        if (canEdit && u.isDeleted)
                           const PopupMenuItem(
                             value: 'restore',
                             child: Text('Восстановить'),
                           )
-                        else ...[
+                        else if (canEdit) ...[
                           const PopupMenuItem(
                             value: 'soft',
                             child: Text('В корзину'),
                           ),
-                          const PopupMenuItem(
-                            value: 'hard',
-                            child: Text('Удалить навсегда'),
-                          ),
+                          if (canHard)
+                            const PopupMenuItem(
+                              value: 'hard',
+                              child: Text('Удалить навсегда'),
+                            ),
                         ],
                       ],
                     ),
@@ -314,8 +336,8 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
           ],
           items: n.result.items,
           idOf: (u) => u.id,
-          selected: n.selected,
-          onToggleSelect: n.toggleSelection,
+          selected: canEdit ? n.selected : {},
+          onToggleSelect: canEdit ? n.toggleSelection : null,
           sortField: n.query.sortField,
           sortAscending: n.query.sortAscending,
           onSort: (f) => _replace(
@@ -327,7 +349,12 @@ class _AppUserListScreenState extends State<AppUserListScreen> {
             ),
           ),
           onRowTap: (u) => context.go('/users/${u.id}'),
-          actions: (u) => _rowActions(u, n),
+          actions: (u) => _rowActions(
+            u,
+            n,
+            canEdit: canEdit,
+            canHard: canHard,
+          ),
         );
     }
   }
