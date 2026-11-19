@@ -40,7 +40,7 @@ jobs:
         run: |
           echo "Building with API_BASE_URL=$API_BASE_URL"
           if [ -z "$API_BASE_URL" ]; then
-            echo "::error::API_BASE_URL is empty. Set repository Variable to PocketBase root URL (e.g. https://xxx.fly.dev)."
+            echo "::error::API_BASE_URL is empty."
             exit 1
           fi
           flutter build web --release \
