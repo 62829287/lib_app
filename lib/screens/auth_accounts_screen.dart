@@ -8,6 +8,7 @@ import '../models/auth_user.dart';
 import '../state/auth_accounts_notifier.dart';
 import '../state/auth_notifier.dart';
 import '../state/load_status.dart';
+import '../services/data_export.dart';
 import '../widgets/api_feedback.dart';
 import '../widgets/state_views.dart';
 
@@ -21,6 +22,7 @@ class AuthAccountsScreen extends StatefulWidget {
 class _AuthAccountsScreenState extends State<AuthAccountsScreen> {
   final _search = TextEditingController();
   Timer? _debounce;
+  bool _exporting = false;
 
   @override
   void initState() {
@@ -36,6 +38,23 @@ class _AuthAccountsScreenState extends State<AuthAccountsScreen> {
     _debounce?.cancel();
     _search.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportData() async {
+    setState(() => _exporting = true);
+    try {
+      await runApiAction(context, () async {
+        final svc = context.read<DataExportService>();
+        final data = await svc.exportAll();
+        await svc.downloadJson(data);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Файл экспорта загружен')),
+        );
+      });
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
   }
 
   Future<void> _changeRole(AuthUser user, AuthRole? next) async {
@@ -65,9 +84,26 @@ class _AuthAccountsScreenState extends State<AuthAccountsScreen> {
 
     return ListView(
       children: [
-        Text(
-          'Учётные записи',
-          style: Theme.of(context).textTheme.headlineSmall,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Учётные записи',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: _exporting ? null : _exportData,
+              icon: _exporting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.download_outlined),
+              label: const Text('Экспорт'),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         TextField(
@@ -89,7 +125,7 @@ class _AuthAccountsScreenState extends State<AuthAccountsScreen> {
     );
   }
 
-  Widget _body(AuthAccountsNotifier n, int? selfId) {
+  Widget _body(AuthAccountsNotifier n, String? selfId) {
     switch (n.status) {
       case LoadStatus.idle:
       case LoadStatus.loading:

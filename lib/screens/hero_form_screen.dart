@@ -10,8 +10,8 @@ import '../widgets/state_views.dart';
 class HeroFormScreen extends StatefulWidget {
   const HeroFormScreen({super.key, this.id});
 
-  final int? id;
-  bool get isEditing => id != null;
+  final String? id;
+  bool get isEditing => id != null && id!.isNotEmpty;
 
   @override
   State<HeroFormScreen> createState() => _HeroFormScreenState();
@@ -67,7 +67,7 @@ class _HeroFormScreenState extends State<HeroFormScreen> {
           onSubmit: (values) async {
             final repo = context.read<HeroRepository>();
             final hero = DotaHero(
-              id: h?.id ?? 0,
+              id: h?.id ?? '',
               name: '${values['name']}'.trim(),
               primaryAttribute: '${values['primaryAttribute']}'.trim(),
               attackType: '${values['attackType']}'.trim(),

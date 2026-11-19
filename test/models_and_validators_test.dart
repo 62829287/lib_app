@@ -5,6 +5,7 @@ import 'package:library_app/models/build.dart';
 import 'package:library_app/models/dota_hero.dart';
 import 'package:library_app/models/list_query.dart';
 import 'package:library_app/models/role.dart';
+import 'package:library_app/models/team.dart';
 
 void main() {
   group('Валидаторы пароля', () {
@@ -32,38 +33,38 @@ void main() {
   group('Разбор моделей', () {
     test('разбор героя из JSON', () {
       final hero = DotaHero.fromJson({
-        'id': 7,
+        'id': 'hero7',
         'name': 'Pudge',
         'primaryAttribute': 'str',
         'attackType': 'melee',
         'deletedAt': null,
       });
-      expect(hero.id, 7);
+      expect(hero.id, 'hero7');
       expect(hero.name, 'Pudge');
       expect(hero.isDeleted, isFalse);
     });
 
     test('разбор сборки из JSON', () {
       final build = Build.fromJson({
-        'id': 1,
+        'id': 'b1',
         'title': 'Test',
         'code': 'CODE',
         'patch': '7.41',
         'difficulty': 3,
-        'heroId': 2,
-        'proPlayerIds': [1, 2],
-        'roleIds': [3],
+        'heroId': 'h2',
+        'proPlayerIds': ['p1', 'p2'],
+        'roleIds': ['r3'],
         'picks': 10,
         'wins': 4,
       });
       expect(build.code, 'CODE');
-      expect(build.proPlayerIds, [1, 2]);
+      expect(build.proPlayerIds, ['p1', 'p2']);
       expect(build.picks, 10);
     });
 
     test('разбор роли каталога из JSON', () {
       final role = Role.fromJson({
-        'id': 3,
+        'id': 'r3',
         'name': 'Support',
         'description': 'Heal',
       });
@@ -71,9 +72,21 @@ void main() {
       expect(role.description, 'Heal');
     });
 
+    test('разбор команды из JSON', () {
+      final team = Team.fromJson({
+        'id': 't1',
+        'name': 'Team Spirit',
+        'tag': 'TS',
+        'region': 'CIS',
+        'description': 'TI',
+      });
+      expect(team.name, 'Team Spirit');
+      expect(team.tag, 'TS');
+    });
+
     test('разбор учётной записи из JSON', () {
       final user = AuthUser.fromJson({
-        'id': 9,
+        'id': 'u9',
         'username': 'reader',
         'displayName': 'Читатель',
         'role': 'viewer',

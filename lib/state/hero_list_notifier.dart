@@ -16,13 +16,13 @@ class HeroListNotifier extends ChangeNotifier {
   PageResult<DotaHero> _result = PageResult.empty();
   LoadStatus _status = LoadStatus.idle;
   String? _error;
-  final Set<int> _selected = {};
+  final Set<String> _selected = {};
 
   ListQuery get query => _query;
   PageResult<DotaHero> get result => _result;
   LoadStatus get status => _status;
   String? get error => _error;
-  Set<int> get selected => Set.unmodifiable(_selected);
+  Set<String> get selected => Set.unmodifiable(_selected);
   bool get hasSelection => _selected.isNotEmpty;
 
   List<DotaHero> get selectedItems =>
@@ -56,7 +56,7 @@ class HeroListNotifier extends ChangeNotifier {
     await load();
   }
 
-  void toggleSelection(int id) {
+  void toggleSelection(String id) {
     _selected.contains(id) ? _selected.remove(id) : _selected.add(id);
     notifyListeners();
   }
@@ -88,17 +88,17 @@ class HeroListNotifier extends ChangeNotifier {
     await load();
   }
 
-  Future<void> softDelete(int id) async {
+  Future<void> softDelete(String id) async {
     await _repository.softDelete(id);
     await load();
   }
 
-  Future<void> hardDelete(int id) async {
+  Future<void> hardDelete(String id) async {
     await _repository.hardDelete(id);
     await load();
   }
 
-  Future<void> restore(int id) async {
+  Future<void> restore(String id) async {
     await _repository.restore(id);
     await load();
   }

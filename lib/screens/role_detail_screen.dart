@@ -12,7 +12,7 @@ import '../widgets/state_views.dart';
 class RoleDetailScreen extends StatefulWidget {
   const RoleDetailScreen({super.key, required this.id});
 
-  final int id;
+  final String id;
 
   @override
   State<RoleDetailScreen> createState() => _RoleDetailScreenState();

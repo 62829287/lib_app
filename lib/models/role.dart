@@ -1,5 +1,7 @@
+import '../core/pb.dart';
+
 class Role {
-  final int id;
+  final String id;
   final String name;
   final String description;
   final DateTime? deletedAt;
@@ -14,7 +16,7 @@ class Role {
   bool get isDeleted => deletedAt != null;
 
   Role copyWith({
-    int? id,
+    String? id,
     String? name,
     String? description,
     DateTime? deletedAt,
@@ -36,11 +38,9 @@ class Role {
   };
 
   factory Role.fromJson(Map<String, dynamic> json) => Role(
-    id: (json['id'] as num?)?.toInt() ?? 0,
+    id: pbId(json['id']),
     name: json['name'] as String? ?? '',
     description: json['description'] as String? ?? '',
-    deletedAt: json['deletedAt'] == null
-        ? null
-        : DateTime.tryParse('${json['deletedAt']}'),
+    deletedAt: pbDate(json['deletedAt']),
   );
 }

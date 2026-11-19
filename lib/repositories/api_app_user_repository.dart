@@ -1,67 +1,62 @@
 import 'package:dio/dio.dart';
 
 import '../core/api_client.dart';
-import '../core/api_exceptions.dart';
+import '../core/pb.dart';
 import '../models/app_user.dart';
 import '../models/list_query.dart';
 import '../models/page_result.dart';
 import 'app_user_repository.dart';
+import 'pb_crud.dart';
 
-class ApiAppUserRepository implements AppUserRepository {
+class ApiAppUserRepository with PbCrudMixin implements AppUserRepository {
   ApiAppUserRepository(this._dio);
 
   final Dio _dio;
   CancelToken? _findToken;
 
   @override
+  Dio get dio => _dio;
+
+  @override
+  String get collection => 'app_users';
+
+  @override
   Future<PageResult<AppUser>> find(ListQuery q) {
     _findToken?.cancel('stale');
     final token = CancelToken();
     _findToken = token;
-
     return guardRead(() async {
+      final filter = pbDeletedFilter(
+        includeDeleted: q.includeDeleted,
+        searchField: 'nickname',
+        search: q.search,
+      );
       final response = await _dio.get<Map<String, dynamic>>(
-        '/users',
+        pbRecords(collection),
         queryParameters: {
-          if (q.search.trim().isNotEmpty) 'search': q.search.trim(),
-          'sort': '${q.sortField},${q.sortAscending ? 'asc' : 'desc'}',
           'page': q.page,
-          'size': q.size,
-          if (q.includeDeleted) 'includeDeleted': true,
-          ...q.filters,
+          'perPage': q.size,
+          'sort': pbSort(q.sortField, q.sortAscending),
+          if (filter != null) 'filter': filter,
         },
         cancelToken: token,
       );
-      final data = response.data!;
-      return PageResult(
-        items: (data['items'] as List? ?? const [])
-            .whereType<Map>()
-            .map((e) => AppUser.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-        page: (data['page'] as num?)?.toInt() ?? 1,
-        size: (data['size'] as num?)?.toInt() ?? q.size,
-        total: (data['total'] as num?)?.toInt() ?? 0,
+      return pbPageResult(
+        response.data!,
+        AppUser.fromJson,
+        fallbackPage: q.page,
+        fallbackSize: q.size,
       );
     });
   }
 
   @override
-  Future<AppUser?> findById(int id) => guardRead(() async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>('/users/$id');
-      return AppUser.fromJson(response.data!);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404 || e.error is NotFoundException) {
-        return null;
-      }
-      rethrow;
-    }
-  });
+  Future<AppUser?> findById(String id) => pbFindById(id, AppUser.fromJson);
 
   @override
   Future<AppUser> create(AppUser user) => guard(() async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/users',
+      pbRecords(collection),
       data: {
         'nickname': user.nickname,
         'email': user.email,
@@ -74,8 +69,8 @@ class ApiAppUserRepository implements AppUserRepository {
 
   @override
   Future<AppUser> update(AppUser user) => guard(() async {
-    final response = await _dio.put<Map<String, dynamic>>(
-      '/users/${user.id}',
+    final response = await _dio.patch<Map<String, dynamic>>(
+      pbRecord(collection, user.id),
       data: {
         'nickname': user.nickname,
         'email': user.email,
@@ -87,49 +82,35 @@ class ApiAppUserRepository implements AppUserRepository {
   });
 
   @override
-  Future<void> softDelete(int id) => guard(() => _dio.delete('/users/$id'));
+  Future<void> softDelete(String id) => pbSoftDelete(id);
 
   @override
-  Future<void> hardDelete(int id) =>
-      guard(() => _dio.delete('/users/$id', queryParameters: {'hard': true}));
+  Future<void> hardDelete(String id) => pbHardDelete(id);
 
   @override
-  Future<void> restore(int id) => guard(() => _dio.post('/users/$id/restore'));
+  Future<void> restore(String id) => pbRestore(id);
 
   @override
-  Future<int> softDeleteMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/users/bulk-delete',
-      data: {'ids': ids},
-    );
-    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-  });
+  Future<int> softDeleteMany(List<String> ids) => pbSoftDeleteMany(ids);
 
   @override
-  Future<int> hardDeleteMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/users/bulk-delete',
-      data: {'ids': ids, 'hard': true},
-    );
-    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-  });
+  Future<int> hardDeleteMany(List<String> ids) => pbHardDeleteMany(ids);
 
   @override
-  Future<int> restoreMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/users/bulk-restore',
-      data: {'ids': ids},
-    );
-    return (response.data?['restored'] as num?)?.toInt() ?? 0;
-  });
+  Future<int> restoreMany(List<String> ids) => pbRestoreMany(ids);
 
   @override
-  Future<bool> emailExists(String email, {int? excludingId}) =>
+  Future<bool> emailExists(String email, {String? excludingId}) =>
       guardRead(() async {
+        final safe = email.replaceAll('"', '');
+        var filter = 'email = "$safe"';
+        if (excludingId != null && excludingId.isNotEmpty) {
+          filter += ' && id != "$excludingId"';
+        }
         final response = await _dio.get<Map<String, dynamic>>(
-          '/users/email-exists',
-          queryParameters: {'email': email, 'excludingId': ?excludingId},
+          pbRecords(collection),
+          queryParameters: {'perPage': 1, 'filter': filter},
         );
-        return response.data?['exists'] == true;
+        return ((response.data?['totalItems'] as num?)?.toInt() ?? 0) > 0;
       });
 }

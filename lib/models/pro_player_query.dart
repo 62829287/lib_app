@@ -1,6 +1,7 @@
 class ProPlayerQuery {
   final String search;
   final String? country;
+  final String? teamId;
   final String sortField;
   final bool sortAscending;
   final int page;
@@ -10,6 +11,7 @@ class ProPlayerQuery {
   const ProPlayerQuery({
     this.search = '',
     this.country,
+    this.teamId,
     this.sortField = 'nickname',
     this.sortAscending = true,
     this.page = 1,
@@ -20,6 +22,7 @@ class ProPlayerQuery {
   ProPlayerQuery copyWith({
     String? search,
     Object? country = _unset,
+    Object? teamId = _unset,
     String? sortField,
     bool? sortAscending,
     int? page,
@@ -27,11 +30,15 @@ class ProPlayerQuery {
     bool? includeDeleted,
   }) {
     final filtersChanged =
-        search != null || country != _unset || includeDeleted != null;
+        search != null ||
+        country != _unset ||
+        teamId != _unset ||
+        includeDeleted != null;
 
     return ProPlayerQuery(
       search: search ?? this.search,
       country: country == _unset ? this.country : country as String?,
+      teamId: teamId == _unset ? this.teamId : teamId as String?,
       sortField: sortField ?? this.sortField,
       sortAscending: sortAscending ?? this.sortAscending,
       page: page ?? (filtersChanged ? 1 : this.page),
@@ -44,6 +51,7 @@ class ProPlayerQuery {
     final params = <String, String>{};
     if (search.trim().isNotEmpty) params['search'] = search.trim();
     if (country != null && country!.isNotEmpty) params['country'] = country!;
+    if (teamId != null && teamId!.isNotEmpty) params['teamId'] = teamId!;
     if (sortField != 'nickname' || !sortAscending) {
       params['sort'] = '$sortField,${sortAscending ? 'asc' : 'desc'}';
     }
@@ -68,6 +76,7 @@ class ProPlayerQuery {
     return ProPlayerQuery(
       search: params['search'] ?? '',
       country: params['country'],
+      teamId: params['teamId'],
       sortField: sortField,
       sortAscending: sortAscending,
       page: int.tryParse(params['page'] ?? '') ?? 1,

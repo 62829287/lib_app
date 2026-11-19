@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'api_exceptions.dart';
 import 'config.dart';
 
+export 'api_exceptions.dart';
+
 typedef TokenProvider = String? Function();
 typedef TokenRefresher = Future<bool> Function();
 typedef AuthLostHandler = Future<void> Function();
@@ -28,7 +30,7 @@ Dio buildDio({
       onRequest: (options, handler) {
         final token = tokenProvider?.call();
         if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
+          options.headers['Authorization'] = token;
         }
         if (kIsWeb) {
           final qp = Uri.base.queryParameters;
@@ -83,7 +85,10 @@ Dio buildDio({
         final path = error.requestOptions.path;
         final alreadyRetried =
             error.requestOptions.extra['auth_retried'] == true;
-        final isAuthPath = path.contains('/auth/');
+        final isAuthPath =
+            path.contains('auth-with-password') ||
+            path.contains('auth-refresh') ||
+            path.contains('/auth/');
 
         if (status == 401 &&
             !isAuthPath &&
@@ -99,7 +104,7 @@ Dio buildDio({
             options.extra['auth_retried'] = true;
             final token = tokenProvider?.call();
             if (token != null) {
-              options.headers['Authorization'] = 'Bearer $token';
+              options.headers['Authorization'] = token;
             }
             final response = await dio.fetch(options);
             return handler.resolve(response);

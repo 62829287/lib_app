@@ -12,7 +12,7 @@ import '../widgets/state_views.dart';
 class BuildDetailScreen extends StatefulWidget {
   const BuildDetailScreen({super.key, required this.id});
 
-  final int id;
+  final String id;
 
   @override
   State<BuildDetailScreen> createState() => _BuildDetailScreenState();
@@ -83,7 +83,10 @@ class _BuildDetailScreenState extends State<BuildDetailScreen> {
             const SizedBox(height: 24),
             Text('Про-игроки', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            _ProPlayersBlock(proPlayerIds: build.proPlayerIds),
+            _ProPlayersBlock(
+              proPlayerIds: build.proPlayerIds,
+              teamLabel: (id) => catalog.teamName(id),
+            ),
             const SizedBox(height: 16),
             FilledButton.tonalIcon(
               onPressed: () => context.go('/builds/${build.id}/edit'),
@@ -107,9 +110,13 @@ class _BuildDetailScreenState extends State<BuildDetailScreen> {
 }
 
 class _ProPlayersBlock extends StatelessWidget {
-  const _ProPlayersBlock({required this.proPlayerIds});
+  const _ProPlayersBlock({
+    required this.proPlayerIds,
+    required this.teamLabel,
+  });
 
-  final List<int> proPlayerIds;
+  final List<String> proPlayerIds;
+  final String Function(String teamId) teamLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +140,9 @@ class _ProPlayersBlock extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(player.nickname),
-                subtitle: Text('${player.team} · ${player.country}'),
+                subtitle: Text(
+                  '${teamLabel(player.teamId)} · ${player.country}',
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.go('/pros/${player.id}'),
               ),

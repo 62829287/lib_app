@@ -24,10 +24,10 @@ class EntityFieldSpec {
   final String label;
   final EntityFieldType type;
   final String? Function(String?)? stringValidator;
-  final String? Function(int?)? idValidator;
-  final String? Function(List<int>?)? idsValidator;
-  final List<DropdownMenuItem<int>> Function()? dropdownItems;
-  final List<({int id, String label})> Function()? chipItems;
+  final String? Function(String?)? idValidator;
+  final String? Function(List<String>?)? idsValidator;
+  final List<DropdownMenuItem<String>> Function()? dropdownItems;
+  final List<({String id, String label})> Function()? chipItems;
   final int maxLines;
   final bool readOnly;
   final String? group;
@@ -297,9 +297,11 @@ class EntityFormState extends State<EntityForm> {
         );
       case EntityFieldType.dropdown:
         final items =
-            field.dropdownItems?.call() ?? const <DropdownMenuItem<int>>[];
-        return DropdownButtonFormField<int>(
-          initialValue: _values[field.key] as int?,
+            field.dropdownItems?.call() ?? const <DropdownMenuItem<String>>[];
+        final raw = _values[field.key];
+        final current = raw == null || '$raw'.isEmpty ? null : '$raw';
+        return DropdownButtonFormField<String>(
+          initialValue: current,
           isExpanded: true,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(labelText: field.label),
@@ -313,11 +315,11 @@ class EntityFormState extends State<EntityForm> {
         );
       case EntityFieldType.multiChip:
         final options =
-            field.chipItems?.call() ?? const <({int id, String label})>[];
-        final selected = List<int>.from(
-          (_values[field.key] as List?) ?? const [],
-        );
-        return FormField<List<int>>(
+            field.chipItems?.call() ?? const <({String id, String label})>[];
+        final selected = (_values[field.key] as List? ?? const [])
+            .map((e) => '$e')
+            .toList();
+        return FormField<List<String>>(
           initialValue: selected,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: (_) => _fieldErrors[field.key],

@@ -12,6 +12,7 @@ import 'repositories/build_repository.dart';
 import 'repositories/hero_repository.dart';
 import 'repositories/pro_player_repository.dart';
 import 'repositories/role_repository.dart';
+import 'repositories/team_repository.dart';
 import 'state/app_user_list_notifier.dart';
 import 'state/auth_accounts_notifier.dart';
 import 'state/auth_notifier.dart';
@@ -20,6 +21,8 @@ import 'state/catalog_notifier.dart';
 import 'state/hero_list_notifier.dart';
 import 'state/pro_player_list_notifier.dart';
 import 'state/role_list_notifier.dart';
+import 'state/team_list_notifier.dart';
+import 'services/data_export.dart';
 import 'widgets/session_guard.dart';
 
 class LibraryApp extends StatelessWidget {
@@ -30,8 +33,10 @@ class LibraryApp extends StatelessWidget {
     required this.buildRepository,
     required this.proPlayerRepository,
     required this.roleRepository,
+    required this.teamRepository,
     required this.heroRepository,
     required this.appUserRepository,
+    required this.exportService,
   });
 
   final AuthNotifier authNotifier;
@@ -39,8 +44,10 @@ class LibraryApp extends StatelessWidget {
   final BuildRepository buildRepository;
   final ProPlayerRepository proPlayerRepository;
   final RoleRepository roleRepository;
+  final TeamRepository teamRepository;
   final HeroRepository heroRepository;
   final AppUserRepository appUserRepository;
+  final DataExportService exportService;
 
   @override
   Widget build(BuildContext context) {
@@ -51,13 +58,16 @@ class LibraryApp extends StatelessWidget {
         Provider<BuildRepository>.value(value: buildRepository),
         Provider<ProPlayerRepository>.value(value: proPlayerRepository),
         Provider<RoleRepository>.value(value: roleRepository),
+        Provider<TeamRepository>.value(value: teamRepository),
         Provider<HeroRepository>.value(value: heroRepository),
         Provider<AppUserRepository>.value(value: appUserRepository),
+        Provider<DataExportService>.value(value: exportService),
         ChangeNotifierProvider(
           create: (context) => CatalogNotifier(
             roles: context.read<RoleRepository>(),
             heroes: context.read<HeroRepository>(),
             proPlayers: context.read<ProPlayerRepository>(),
+            teams: context.read<TeamRepository>(),
           ),
         ),
         ChangeNotifierProvider(
@@ -70,6 +80,9 @@ class LibraryApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => RoleListNotifier(context.read<RoleRepository>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => TeamListNotifier(context.read<TeamRepository>()),
         ),
         ChangeNotifierProvider(
           create: (context) => HeroListNotifier(context.read<HeroRepository>()),

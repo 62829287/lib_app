@@ -1,18 +1,25 @@
 import 'package:dio/dio.dart';
 
 import '../core/api_client.dart';
-import '../core/api_exceptions.dart';
+import '../core/pb.dart';
 import '../models/dota_hero.dart';
 import '../models/list_query.dart';
 import '../models/page_result.dart';
 import 'hero_repository.dart';
+import 'pb_crud.dart';
 
-class ApiHeroRepository implements HeroRepository {
+class ApiHeroRepository with PbCrudMixin implements HeroRepository {
   ApiHeroRepository(this._dio);
 
   final Dio _dio;
   CancelToken? _findToken;
   List<DotaHero>? _allActiveCache;
+
+  @override
+  Dio get dio => _dio;
+
+  @override
+  String get collection => 'heroes';
 
   @override
   void invalidateCatalogCache() => _allActiveCache = null;
@@ -22,50 +29,38 @@ class ApiHeroRepository implements HeroRepository {
     _findToken?.cancel('stale');
     final token = CancelToken();
     _findToken = token;
-
     return guardRead(() async {
+      final filter = pbDeletedFilter(
+        includeDeleted: q.includeDeleted,
+        searchField: 'name',
+        search: q.search,
+      );
       final response = await _dio.get<Map<String, dynamic>>(
-        '/heroes',
+        pbRecords(collection),
         queryParameters: {
-          if (q.search.trim().isNotEmpty) 'search': q.search.trim(),
-          'sort': '${q.sortField},${q.sortAscending ? 'asc' : 'desc'}',
           'page': q.page,
-          'size': q.size,
-          if (q.includeDeleted) 'includeDeleted': true,
-          ...q.filters,
+          'perPage': q.size,
+          'sort': pbSort(q.sortField, q.sortAscending),
+          if (filter != null) 'filter': filter,
         },
         cancelToken: token,
       );
-      final data = response.data!;
-      return PageResult(
-        items: (data['items'] as List? ?? const [])
-            .whereType<Map>()
-            .map((e) => DotaHero.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-        page: (data['page'] as num?)?.toInt() ?? 1,
-        size: (data['size'] as num?)?.toInt() ?? q.size,
-        total: (data['total'] as num?)?.toInt() ?? 0,
+      return pbPageResult(
+        response.data!,
+        DotaHero.fromJson,
+        fallbackPage: q.page,
+        fallbackSize: q.size,
       );
     });
   }
 
   @override
-  Future<DotaHero?> findById(int id) => guardRead(() async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>('/heroes/$id');
-      return DotaHero.fromJson(response.data!);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404 || e.error is NotFoundException) {
-        return null;
-      }
-      rethrow;
-    }
-  });
+  Future<DotaHero?> findById(String id) => pbFindById(id, DotaHero.fromJson);
 
   @override
   Future<DotaHero> create(DotaHero hero) => guard(() async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/heroes',
+      pbRecords(collection),
       data: {
         'name': hero.name,
         'primaryAttribute': hero.primaryAttribute,
@@ -78,8 +73,8 @@ class ApiHeroRepository implements HeroRepository {
 
   @override
   Future<DotaHero> update(DotaHero hero) => guard(() async {
-    final response = await _dio.put<Map<String, dynamic>>(
-      '/heroes/${hero.id}',
+    final response = await _dio.patch<Map<String, dynamic>>(
+      pbRecord(collection, hero.id),
       data: {
         'name': hero.name,
         'primaryAttribute': hero.primaryAttribute,
@@ -91,60 +86,58 @@ class ApiHeroRepository implements HeroRepository {
   });
 
   @override
-  Future<void> softDelete(int id) => guard(() async {
-    await _dio.delete('/heroes/$id');
+  Future<void> softDelete(String id) async {
+    await pbSoftDelete(id);
     invalidateCatalogCache();
-  });
+  }
 
   @override
-  Future<void> hardDelete(int id) => guard(() async {
-    await _dio.delete('/heroes/$id', queryParameters: {'hard': true});
+  Future<void> hardDelete(String id) async {
+    await pbHardDelete(id);
     invalidateCatalogCache();
-  });
+  }
 
   @override
-  Future<void> restore(int id) => guard(() async {
-    await _dio.post('/heroes/$id/restore');
+  Future<void> restore(String id) async {
+    await pbRestore(id);
     invalidateCatalogCache();
-  });
+  }
 
   @override
-  Future<int> softDeleteMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/heroes/bulk-delete',
-      data: {'ids': ids},
-    );
+  Future<int> softDeleteMany(List<String> ids) async {
+    final n = await pbSoftDeleteMany(ids);
     invalidateCatalogCache();
-    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-  });
+    return n;
+  }
 
   @override
-  Future<int> hardDeleteMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/heroes/bulk-delete',
-      data: {'ids': ids, 'hard': true},
-    );
+  Future<int> hardDeleteMany(List<String> ids) async {
+    final n = await pbHardDeleteMany(ids);
     invalidateCatalogCache();
-    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-  });
+    return n;
+  }
 
   @override
-  Future<int> restoreMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/heroes/bulk-restore',
-      data: {'ids': ids},
-    );
+  Future<int> restoreMany(List<String> ids) async {
+    final n = await pbRestoreMany(ids);
     invalidateCatalogCache();
-    return (response.data?['restored'] as num?)?.toInt() ?? 0;
-  });
+    return n;
+  }
 
   @override
   Future<List<DotaHero>> allActive() async {
     final cached = _allActiveCache;
     if (cached != null) return cached;
     return guardRead(() async {
-      final response = await _dio.get<List<dynamic>>('/heroes/all');
-      final list = (response.data ?? const [])
+      final response = await _dio.get<Map<String, dynamic>>(
+        pbRecords(collection),
+        queryParameters: {
+          'perPage': 500,
+          'filter': '(deletedAt = "" || deletedAt = null)',
+          'sort': 'name',
+        },
+      );
+      final list = (response.data?['items'] as List? ?? const [])
           .whereType<Map>()
           .map((e) => DotaHero.fromJson(Map<String, dynamic>.from(e)))
           .toList();

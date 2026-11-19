@@ -11,8 +11,8 @@ import '../widgets/state_views.dart';
 class AppUserFormScreen extends StatefulWidget {
   const AppUserFormScreen({super.key, this.id});
 
-  final int? id;
-  bool get isEditing => id != null;
+  final String? id;
+  bool get isEditing => id != null && id!.isNotEmpty;
 
   @override
   State<AppUserFormScreen> createState() => _AppUserFormScreenState();
@@ -94,7 +94,7 @@ class _AppUserFormScreenState extends State<AppUserFormScreen> {
           onSubmit: (values) async {
             final repo = context.read<AppUserRepository>();
             final user = AppUser(
-              id: u?.id ?? 0,
+              id: u?.id ?? '',
               nickname: '${values['nickname']}'.trim(),
               email: '${values['email']}'.trim(),
               region: '${values['region']}'.trim(),

@@ -38,7 +38,7 @@ class AuthAccountsNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<AuthUser> updateRole(int id, String role) async {
+  Future<AuthUser> updateRole(String id, String role) async {
     final updated = await _api.updateAccountRole(id, role);
     _items = [
       for (final u in _items)

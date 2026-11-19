@@ -143,6 +143,7 @@ class _AppShellState extends State<AppShell> {
     if (auth.canBrowseReferenceData()) {
       list.addAll(const [
         _Section('Роли', '/roles', Icons.category_outlined),
+        _Section('Команды', '/teams', Icons.groups),
         _Section('Герои', '/heroes', Icons.shield_outlined),
       ]);
     }

@@ -1,5 +1,7 @@
+import '../core/pb.dart';
+
 class DotaHero {
-  final int id;
+  final String id;
   final String name;
   final String primaryAttribute;
   final String attackType;
@@ -16,7 +18,7 @@ class DotaHero {
   bool get isDeleted => deletedAt != null;
 
   DotaHero copyWith({
-    int? id,
+    String? id,
     String? name,
     String? primaryAttribute,
     String? attackType,
@@ -41,12 +43,10 @@ class DotaHero {
   };
 
   factory DotaHero.fromJson(Map<String, dynamic> json) => DotaHero(
-    id: (json['id'] as num?)?.toInt() ?? 0,
+    id: pbId(json['id']),
     name: json['name'] as String? ?? '',
     primaryAttribute: json['primaryAttribute'] as String? ?? '',
     attackType: json['attackType'] as String? ?? '',
-    deletedAt: json['deletedAt'] == null
-        ? null
-        : DateTime.tryParse('${json['deletedAt']}'),
+    deletedAt: pbDate(json['deletedAt']),
   );
 }

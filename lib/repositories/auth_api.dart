@@ -10,10 +10,10 @@ class AuthApi {
 
   Future<AuthTokens> login(String username, String password) => guard(() async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/login',
-      data: {'username': username, 'password': password},
+      '/api/collections/users/auth-with-password',
+      data: {'identity': username.trim(), 'password': password},
     );
-    return AuthTokens.fromJson(response.data!);
+    return AuthTokens.fromPb(response.data!);
   });
 
   Future<AuthTokens> register({
@@ -21,45 +21,67 @@ class AuthApi {
     required String displayName,
     required String password,
   }) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/register',
+    final email = username.contains('@')
+        ? username.trim()
+        : '${username.trim()}@dota.local';
+    await _dio.post<Map<String, dynamic>>(
+      '/api/collections/users/records',
       data: {
-        'username': username,
-        'displayName': displayName,
+        'email': email,
+        'username': username.trim(),
+        'name': displayName.trim(),
         'password': password,
+        'passwordConfirm': password,
+        'role': 'viewer',
+        'emailVisibility': true,
       },
     );
-    return AuthTokens.fromJson(response.data!);
+    return login(username.trim(), password);
   });
 
   Future<AuthUser> me() => guard(() async {
-    final response = await _dio.get<Map<String, dynamic>>('/auth/me');
-    return AuthUser.fromJson(response.data!);
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/collections/users/auth-refresh',
+    );
+    final record = Map<String, dynamic>.from(
+      response.data?['record'] as Map? ?? const {},
+    );
+    return AuthUser.fromPb(record);
   });
 
   Future<AuthTokens> refresh(String refreshToken) => guard(() async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/auth/refresh',
-      data: {'refreshToken': refreshToken},
+      '/api/collections/users/auth-refresh',
+      options: Options(headers: {'Authorization': refreshToken}),
     );
-    return AuthTokens.fromJson(response.data!);
+    return AuthTokens.fromPb(response.data!);
   });
 
   Future<List<AuthUser>> listAccounts({String search = ''}) => guard(() async {
-    final response = await _dio.get<List<dynamic>>(
-      '/accounts',
-      queryParameters: {if (search.trim().isNotEmpty) 'search': search.trim()},
+    final q = search.trim();
+    final filter = q.isEmpty
+        ? null
+        : '(username ~ "${q.replaceAll('"', '')}" || email ~ "${q.replaceAll('"', '')}" || name ~ "${q.replaceAll('"', '')}")';
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/collections/users/records',
+      queryParameters: {
+        'perPage': 200,
+        if (filter != null) 'filter': filter,
+        'sort': 'username',
+      },
     );
-    return (response.data ?? [])
-        .map((e) => AuthUser.fromJson(Map<String, dynamic>.from(e as Map)))
+    return (response.data?['items'] as List? ?? const [])
+        .whereType<Map>()
+        .map((e) => AuthUser.fromPb(Map<String, dynamic>.from(e)))
         .toList();
   });
 
-  Future<AuthUser> updateAccountRole(int id, String role) => guard(() async {
-    final response = await _dio.patch<Map<String, dynamic>>(
-      '/accounts/$id',
-      data: {'role': role},
-    );
-    return AuthUser.fromJson(response.data!);
-  });
+  Future<AuthUser> updateAccountRole(String id, String role) =>
+      guard(() async {
+        final response = await _dio.patch<Map<String, dynamic>>(
+          '/api/collections/users/records/$id',
+          data: {'role': role},
+        );
+        return AuthUser.fromPb(response.data!);
+      });
 }

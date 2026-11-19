@@ -12,7 +12,7 @@ import '../widgets/state_views.dart';
 class HeroDetailScreen extends StatefulWidget {
   const HeroDetailScreen({super.key, required this.id});
 
-  final int id;
+  final String id;
 
   @override
   State<HeroDetailScreen> createState() => _HeroDetailScreenState();

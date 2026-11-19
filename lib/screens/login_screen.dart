@@ -74,11 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text('Вход', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Войдите, чтобы открыть каталог сборок.',
-                      style: theme.textTheme.bodyMedium,
-                    ),
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _username,

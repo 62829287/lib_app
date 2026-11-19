@@ -1,8 +1,10 @@
+import '../core/pb.dart';
+
 class ProPlayer {
-  final int id;
+  final String id;
   final String nickname;
   final String realName;
-  final String team;
+  final String teamId;
   final int rating;
   final String country;
   final DateTime? deletedAt;
@@ -11,7 +13,7 @@ class ProPlayer {
     required this.id,
     required this.nickname,
     required this.realName,
-    required this.team,
+    required this.teamId,
     required this.rating,
     required this.country,
     this.deletedAt,
@@ -21,10 +23,10 @@ class ProPlayer {
   String get displayName => nickname;
 
   ProPlayer copyWith({
-    int? id,
+    String? id,
     String? nickname,
     String? realName,
-    String? team,
+    String? teamId,
     int? rating,
     String? country,
     DateTime? deletedAt,
@@ -34,7 +36,7 @@ class ProPlayer {
       id: id ?? this.id,
       nickname: nickname ?? this.nickname,
       realName: realName ?? this.realName,
-      team: team ?? this.team,
+      teamId: teamId ?? this.teamId,
       rating: rating ?? this.rating,
       country: country ?? this.country,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
@@ -45,21 +47,19 @@ class ProPlayer {
     'id': id,
     'nickname': nickname,
     'realName': realName,
-    'team': team,
+    'teamId': teamId,
     'rating': rating,
     'country': country,
     'deletedAt': deletedAt?.toIso8601String(),
   };
 
   factory ProPlayer.fromJson(Map<String, dynamic> json) => ProPlayer(
-    id: (json['id'] as num?)?.toInt() ?? 0,
+    id: pbId(json['id']),
     nickname: json['nickname'] as String? ?? '',
     realName: json['realName'] as String? ?? '',
-    team: json['team'] as String? ?? '',
+    teamId: pbId(json['teamId']),
     rating: (json['rating'] as num?)?.toInt() ?? 0,
     country: json['country'] as String? ?? '',
-    deletedAt: json['deletedAt'] == null
-        ? null
-        : DateTime.tryParse('${json['deletedAt']}'),
+    deletedAt: pbDate(json['deletedAt']),
   );
 }

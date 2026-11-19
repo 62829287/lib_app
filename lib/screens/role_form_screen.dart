@@ -10,8 +10,8 @@ import '../widgets/state_views.dart';
 class RoleFormScreen extends StatefulWidget {
   const RoleFormScreen({super.key, this.id});
 
-  final int? id;
-  bool get isEditing => id != null;
+  final String? id;
+  bool get isEditing => id != null && id!.isNotEmpty;
 
   @override
   State<RoleFormScreen> createState() => _RoleFormScreenState();
@@ -62,7 +62,7 @@ class _RoleFormScreenState extends State<RoleFormScreen> {
           onSubmit: (values) async {
             final repo = context.read<RoleRepository>();
             final role = Role(
-              id: r?.id ?? 0,
+              id: r?.id ?? '',
               name: '${values['name']}'.trim(),
               description: '${values['description']}'.trim(),
               deletedAt: r?.deletedAt,

@@ -1,8 +1,8 @@
 class BuildQuery {
   final String search;
-  final int? roleId;
-  final int? heroId;
-  final int? proPlayerId;
+  final String? roleId;
+  final String? heroId;
+  final String? proPlayerId;
   final int? difficultyFrom;
   final int? difficultyTo;
   final String sortField;
@@ -49,11 +49,11 @@ class BuildQuery {
 
     return BuildQuery(
       search: search ?? this.search,
-      roleId: roleId == _unset ? this.roleId : roleId as int?,
-      heroId: heroId == _unset ? this.heroId : heroId as int?,
+      roleId: roleId == _unset ? this.roleId : roleId as String?,
+      heroId: heroId == _unset ? this.heroId : heroId as String?,
       proPlayerId: proPlayerId == _unset
           ? this.proPlayerId
-          : proPlayerId as int?,
+          : proPlayerId as String?,
       difficultyFrom: difficultyFrom == _unset
           ? this.difficultyFrom
           : difficultyFrom as int?,
@@ -71,9 +71,11 @@ class BuildQuery {
   Map<String, String> toQueryParameters() {
     final params = <String, String>{};
     if (search.trim().isNotEmpty) params['search'] = search.trim();
-    if (roleId != null) params['roleId'] = '$roleId';
-    if (heroId != null) params['heroId'] = '$heroId';
-    if (proPlayerId != null) params['proPlayerId'] = '$proPlayerId';
+    if (roleId != null && roleId!.isNotEmpty) params['roleId'] = roleId!;
+    if (heroId != null && heroId!.isNotEmpty) params['heroId'] = heroId!;
+    if (proPlayerId != null && proPlayerId!.isNotEmpty) {
+      params['proPlayerId'] = proPlayerId!;
+    }
     if (difficultyFrom != null) params['difficultyFrom'] = '$difficultyFrom';
     if (difficultyTo != null) params['difficultyTo'] = '$difficultyTo';
     if (sortField != 'title' || !sortAscending) {
@@ -99,9 +101,9 @@ class BuildQuery {
 
     return BuildQuery(
       search: params['search'] ?? '',
-      roleId: int.tryParse(params['roleId'] ?? ''),
-      heroId: int.tryParse(params['heroId'] ?? ''),
-      proPlayerId: int.tryParse(params['proPlayerId'] ?? ''),
+      roleId: params['roleId'],
+      heroId: params['heroId'],
+      proPlayerId: params['proPlayerId'],
       difficultyFrom: int.tryParse(params['difficultyFrom'] ?? ''),
       difficultyTo: int.tryParse(params['difficultyTo'] ?? ''),
       sortField: sortField,

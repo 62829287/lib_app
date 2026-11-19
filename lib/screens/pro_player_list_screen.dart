@@ -233,6 +233,7 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
         _buildBody(
           context,
           notifier,
+          catalog,
           useCards,
           canEdit: canEdit,
           canHard: canHard,
@@ -306,6 +307,7 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
   Widget _buildBody(
     BuildContext context,
     ProPlayerListNotifier notifier,
+    CatalogNotifier catalog,
     bool useCards, {
     required bool canEdit,
     required bool canHard,
@@ -345,7 +347,7 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      '${p.team} · ${p.country} · рейтинг ${p.rating}',
+                      '${catalog.teamName(p.teamId)} · ${p.country} · рейтинг ${p.rating}',
                     ),
                     onTap: () => context.go('/pros/${p.id}'),
                     trailing: PopupMenuButton<String>(
@@ -419,8 +421,8 @@ class _ProPlayerListScreenState extends State<ProPlayerListScreen> {
             ),
             TableColumnSpec(
               label: 'Команда',
-              sortField: 'team',
-              build: (p) => Text(p.team),
+              sortField: 'teamId',
+              build: (p) => Text(catalog.teamName(p.teamId)),
             ),
             TableColumnSpec(
               label: 'Рейтинг',

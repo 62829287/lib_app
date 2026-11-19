@@ -8,7 +8,7 @@ import '../widgets/state_views.dart';
 class AppUserDetailScreen extends StatefulWidget {
   const AppUserDetailScreen({super.key, required this.id});
 
-  final int id;
+  final String id;
 
   @override
   State<AppUserDetailScreen> createState() => _AppUserDetailScreenState();

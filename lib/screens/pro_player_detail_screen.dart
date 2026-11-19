@@ -7,12 +7,13 @@ import '../models/build_query.dart';
 import '../models/pro_player.dart';
 import '../repositories/build_repository.dart';
 import '../repositories/pro_player_repository.dart';
+import '../state/catalog_notifier.dart';
 import '../widgets/state_views.dart';
 
 class ProPlayerDetailScreen extends StatefulWidget {
   const ProPlayerDetailScreen({super.key, required this.id});
 
-  final int id;
+  final String id;
 
   @override
   State<ProPlayerDetailScreen> createState() => _ProPlayerDetailScreenState();
@@ -50,6 +51,7 @@ class _ProPlayerDetailScreenState extends State<ProPlayerDetailScreen> {
         if (p == null) return const EmptyView(message: 'Про-игрок не найден');
         final builds = data!.builds;
         final theme = Theme.of(context);
+        final catalog = context.watch<CatalogNotifier>();
 
         return ListView(
           children: [
@@ -62,7 +64,7 @@ class _ProPlayerDetailScreenState extends State<ProPlayerDetailScreen> {
               ),
             const SizedBox(height: 16),
             _InfoRow(label: 'Имя', value: p.realName),
-            _InfoRow(label: 'Команда', value: p.team),
+            _InfoRow(label: 'Команда', value: catalog.teamName(p.teamId)),
             _InfoRow(label: 'Рейтинг', value: '${p.rating}'),
             _InfoRow(label: 'Страна', value: p.country),
             const SizedBox(height: 24),

@@ -44,12 +44,12 @@ ResponseBody _json(int status, Object? data) {
 }
 
 const _sampleBuild = Build(
-  id: 0,
+  id: '',
   title: 'Dup',
   code: 'PA-BF-736A',
   patch: '7.41c',
   difficulty: 1,
-  heroId: 1,
+  heroId: 'h1',
   proPlayerIds: [],
   roleIds: [],
   picks: 0,
@@ -60,26 +60,26 @@ void main() {
   group('Репозиторий сборок', () {
     test('find разбирает страницу сборок', () async {
       final dio = _dioWith((options) async {
-        expect(options.path, '/builds');
+        expect(options.path, '/api/collections/builds/records');
         expect(options.queryParameters['page'], 1);
         return _json(200, {
           'items': [
             {
-              'id': 1,
+              'id': 'b1',
               'title': 'PA BF',
               'code': 'PA-BF',
               'patch': '7.41c',
               'difficulty': 3,
-              'heroId': 1,
-              'proPlayerIds': [1],
-              'roleIds': [1],
+              'heroId': 'h1',
+              'proPlayerIds': ['p1'],
+              'roleIds': ['r1'],
               'picks': 10,
               'wins': 5,
             },
           ],
           'page': 1,
-          'size': 10,
-          'total': 1,
+          'perPage': 10,
+          'totalItems': 1,
         });
       });
 
@@ -116,11 +116,11 @@ void main() {
       });
 
       expect(
-        () => ApiBuildRepository(dio).hardDelete(1),
+        () => ApiBuildRepository(dio).hardDelete('b1'),
         throwsA(
           isA<ConflictException>().having(
             (e) => e.message,
-            'сообщение',
+            'message',
             contains('связанные'),
           ),
         ),
@@ -128,11 +128,10 @@ void main() {
     });
 
     test('недоступность сервера на create даёт NetworkException', () async {
-      final dio = _dioWith((options) async {
+      final dio = _dioWith((_) async {
         throw DioException(
-          requestOptions: options,
+          requestOptions: RequestOptions(path: '/x'),
           type: DioExceptionType.connectionError,
-          error: 'Connection refused',
         );
       });
 
@@ -142,26 +141,18 @@ void main() {
       );
     });
 
-    test('softDelete вызывает DELETE без параметра hard', () async {
-      RequestOptions? seen;
+    test('softDelete вызывает PATCH deletedAt', () async {
+      var patched = false;
       final dio = _dioWith((options) async {
-        seen = options;
-        return ResponseBody.fromString('', 204);
+        expect(options.method, 'PATCH');
+        expect(options.path, '/api/collections/builds/records/b7');
+        expect(options.data['deletedAt'], isNotNull);
+        patched = true;
+        return _json(200, {'id': 'b7'});
       });
 
-      await ApiBuildRepository(dio).softDelete(7);
-      expect(seen?.method, 'DELETE');
-      expect(seen?.path, '/builds/7');
-      expect(seen?.queryParameters.containsKey('hard'), isFalse);
-    });
-
-    test('mapHttpError для 422 собирает словарь errors', () {
-      final err = mapHttpError(422, {
-        'message': 'Ошибка валидации',
-        'errors': {'code': 'занят'},
-      });
-      expect(err, isA<ValidationException>());
-      expect((err as ValidationException).errors['code'], 'занят');
+      await ApiBuildRepository(dio).softDelete('b7');
+      expect(patched, isTrue);
     });
   });
 }

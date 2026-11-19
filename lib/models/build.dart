@@ -1,12 +1,14 @@
+import '../core/pb.dart';
+
 class Build {
-  final int id;
+  final String id;
   final String title;
   final String code;
   final String patch;
   final int difficulty;
-  final int heroId;
-  final List<int> proPlayerIds;
-  final List<int> roleIds;
+  final String heroId;
+  final List<String> proPlayerIds;
+  final List<String> roleIds;
   final int picks;
   final int wins;
   final DateTime? deletedAt;
@@ -28,14 +30,14 @@ class Build {
   bool get isDeleted => deletedAt != null;
 
   Build copyWith({
-    int? id,
+    String? id,
     String? title,
     String? code,
     String? patch,
     int? difficulty,
-    int? heroId,
-    List<int>? proPlayerIds,
-    List<int>? roleIds,
+    String? heroId,
+    List<String>? proPlayerIds,
+    List<String>? roleIds,
     int? picks,
     int? wins,
     DateTime? deletedAt,
@@ -48,8 +50,8 @@ class Build {
       patch: patch ?? this.patch,
       difficulty: difficulty ?? this.difficulty,
       heroId: heroId ?? this.heroId,
-      proPlayerIds: proPlayerIds ?? List<int>.from(this.proPlayerIds),
-      roleIds: roleIds ?? List<int>.from(this.roleIds),
+      proPlayerIds: proPlayerIds ?? List<String>.from(this.proPlayerIds),
+      roleIds: roleIds ?? List<String>.from(this.roleIds),
       picks: picks ?? this.picks,
       wins: wins ?? this.wins,
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
@@ -71,32 +73,16 @@ class Build {
   };
 
   factory Build.fromJson(Map<String, dynamic> json) => Build(
-    id: (json['id'] as num?)?.toInt() ?? 0,
+    id: pbId(json['id']),
     title: json['title'] as String? ?? '',
     code: json['code'] as String? ?? '',
     patch: json['patch'] as String? ?? '',
     difficulty: (json['difficulty'] as num?)?.toInt() ?? 1,
-    heroId: (json['heroId'] as num?)?.toInt() ?? 0,
-    proPlayerIds: _toIntList(json['proPlayerIds']),
-    roleIds: _toIntList(json['roleIds']),
+    heroId: pbId(json['heroId']),
+    proPlayerIds: pbIdList(json['proPlayerIds']),
+    roleIds: pbIdList(json['roleIds']),
     picks: (json['picks'] as num?)?.toInt() ?? 0,
     wins: (json['wins'] as num?)?.toInt() ?? 0,
-    deletedAt: _parseDate(json['deletedAt']),
+    deletedAt: pbDate(json['deletedAt']),
   );
-}
-
-List<int> _toIntList(dynamic value) {
-  if (value is! List) return const [];
-  return value
-      .map((e) => e is num ? e.toInt() : int.tryParse('$e'))
-      .whereType<int>()
-      .toList();
-}
-
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is String && value.isNotEmpty) {
-    return DateTime.tryParse(value);
-  }
-  return null;
 }

@@ -245,18 +245,18 @@ class _BuildListScreenState extends State<BuildListScreen> {
           children: [
             SizedBox(
               width: 200,
-              child: DropdownButtonFormField<int?>(
+              child: DropdownButtonFormField<String?>(
                 key: ValueKey('role-${query.roleId}'),
                 initialValue: query.roleId,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Роль'),
                 items: [
-                  const DropdownMenuItem<int?>(
+                  const DropdownMenuItem<String?>(
                     value: null,
                     child: Text('Все роли', overflow: TextOverflow.ellipsis),
                   ),
                   for (final r in catalog.roles)
-                    DropdownMenuItem(
+                    DropdownMenuItem<String?>(
                       value: r.id,
                       child: Text(r.name, overflow: TextOverflow.ellipsis),
                     ),
@@ -267,18 +267,18 @@ class _BuildListScreenState extends State<BuildListScreen> {
             ),
             SizedBox(
               width: 220,
-              child: DropdownButtonFormField<int?>(
+              child: DropdownButtonFormField<String?>(
                 key: ValueKey('hero-${query.heroId}'),
                 initialValue: query.heroId,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Герой'),
                 items: [
-                  const DropdownMenuItem<int?>(
+                  const DropdownMenuItem<String?>(
                     value: null,
                     child: Text('Все герои', overflow: TextOverflow.ellipsis),
                   ),
                   for (final h in catalog.heroes)
-                    DropdownMenuItem(
+                    DropdownMenuItem<String?>(
                       value: h.id,
                       child: Text(h.name, overflow: TextOverflow.ellipsis),
                     ),

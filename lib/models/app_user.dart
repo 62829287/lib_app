@@ -1,7 +1,8 @@
+import '../core/pb.dart';
 import 'steam_profile.dart';
 
 class AppUser {
-  final int id;
+  final String id;
   final String nickname;
   final String email;
   final String region;
@@ -21,7 +22,7 @@ class AppUser {
   String get displayName => nickname;
 
   AppUser copyWith({
-    int? id,
+    String? id,
     String? nickname,
     String? email,
     String? region,
@@ -49,17 +50,15 @@ class AppUser {
   };
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
-    id: (json['id'] as num?)?.toInt() ?? 0,
+    id: pbId(json['id']),
     nickname: json['nickname'] as String? ?? '',
     email: json['email'] as String? ?? '',
     region: json['region'] as String? ?? '',
     steam: SteamProfile.fromJson(
-      json['steam'] is Map<String, dynamic>
-          ? json['steam'] as Map<String, dynamic>
+      json['steam'] is Map
+          ? Map<String, dynamic>.from(json['steam'] as Map)
           : null,
     ),
-    deletedAt: json['deletedAt'] == null
-        ? null
-        : DateTime.tryParse('${json['deletedAt']}'),
+    deletedAt: pbDate(json['deletedAt']),
   );
 }

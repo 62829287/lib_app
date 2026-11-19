@@ -24,6 +24,9 @@ import '../screens/register_screen.dart';
 import '../screens/role_detail_screen.dart';
 import '../screens/role_form_screen.dart';
 import '../screens/role_list_screen.dart';
+import '../screens/team_detail_screen.dart';
+import '../screens/team_form_screen.dart';
+import '../screens/team_list_screen.dart';
 import '../state/auth_notifier.dart';
 import '../widgets/app_shell.dart';
 import '../widgets/form_exit_scope.dart';
@@ -102,7 +105,7 @@ GoRouter createRouter(AuthNotifier auth) {
                 path: ':id',
                 name: 'build',
                 builder: (context, state) => BuildDetailScreen(
-                  id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                  id: state.pathParameters['id'] ?? '',
                 ),
                 routes: [
                   GoRoute(
@@ -111,7 +114,7 @@ GoRouter createRouter(AuthNotifier auth) {
                     redirect: (c, s) => _requireEditor(auth),
                     onExit: _confirmFormExit,
                     builder: (context, state) => BuildFormScreen(
-                      id: int.tryParse(state.pathParameters['id'] ?? ''),
+                      id: state.pathParameters['id'],
                     ),
                   ),
                 ],
@@ -135,7 +138,7 @@ GoRouter createRouter(AuthNotifier auth) {
                 path: ':id',
                 name: 'pro',
                 builder: (context, state) => ProPlayerDetailScreen(
-                  id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                  id: state.pathParameters['id'] ?? '',
                 ),
                 routes: [
                   GoRoute(
@@ -144,7 +147,7 @@ GoRouter createRouter(AuthNotifier auth) {
                     redirect: (c, s) => _requireEditor(auth),
                     onExit: _confirmFormExit,
                     builder: (context, state) => ProPlayerFormScreen(
-                      id: int.tryParse(state.pathParameters['id'] ?? ''),
+                      id: state.pathParameters['id'],
                     ),
                   ),
                 ],
@@ -168,7 +171,7 @@ GoRouter createRouter(AuthNotifier auth) {
                 path: ':id',
                 name: 'role',
                 builder: (context, state) => RoleDetailScreen(
-                  id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                  id: state.pathParameters['id'] ?? '',
                 ),
                 routes: [
                   GoRoute(
@@ -177,7 +180,40 @@ GoRouter createRouter(AuthNotifier auth) {
                     redirect: (c, s) => _requireEditor(auth),
                     onExit: _confirmFormExit,
                     builder: (context, state) => RoleFormScreen(
-                      id: int.tryParse(state.pathParameters['id'] ?? ''),
+                      id: state.pathParameters['id'],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/teams',
+            name: 'teams',
+            redirect: (c, s) => _requireReferenceData(auth),
+            builder: (context, state) => const TeamListScreen(),
+            routes: [
+              GoRoute(
+                path: 'new',
+                name: 'team-new',
+                redirect: (c, s) => _requireEditor(auth),
+                onExit: _confirmFormExit,
+                builder: (context, state) => const TeamFormScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                name: 'team',
+                builder: (context, state) => TeamDetailScreen(
+                  id: state.pathParameters['id'] ?? '',
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    name: 'team-edit',
+                    redirect: (c, s) => _requireEditor(auth),
+                    onExit: _confirmFormExit,
+                    builder: (context, state) => TeamFormScreen(
+                      id: state.pathParameters['id'],
                     ),
                   ),
                 ],
@@ -201,7 +237,7 @@ GoRouter createRouter(AuthNotifier auth) {
                 path: ':id',
                 name: 'hero',
                 builder: (context, state) => HeroDetailScreen(
-                  id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                  id: state.pathParameters['id'] ?? '',
                 ),
                 routes: [
                   GoRoute(
@@ -210,7 +246,7 @@ GoRouter createRouter(AuthNotifier auth) {
                     redirect: (c, s) => _requireEditor(auth),
                     onExit: _confirmFormExit,
                     builder: (context, state) => HeroFormScreen(
-                      id: int.tryParse(state.pathParameters['id'] ?? ''),
+                      id: state.pathParameters['id'],
                     ),
                   ),
                 ],
@@ -241,7 +277,7 @@ GoRouter createRouter(AuthNotifier auth) {
                 name: 'user',
                 redirect: (c, s) => _requireAdmin(auth),
                 builder: (context, state) => AppUserDetailScreen(
-                  id: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+                  id: state.pathParameters['id'] ?? '',
                 ),
                 routes: [
                   GoRoute(
@@ -250,7 +286,7 @@ GoRouter createRouter(AuthNotifier auth) {
                     redirect: (c, s) => _requireAdmin(auth),
                     onExit: _confirmFormExit,
                     builder: (context, state) => AppUserFormScreen(
-                      id: int.tryParse(state.pathParameters['id'] ?? ''),
+                      id: state.pathParameters['id'],
                     ),
                   ),
                 ],
@@ -273,7 +309,9 @@ bool routeAllowedFor(AuthRole role, String path) {
     }
     return Permissions.canBrowsePros(role);
   }
-  if (path.startsWith('/heroes') || path.startsWith('/roles')) {
+  if (path.startsWith('/heroes') ||
+      path.startsWith('/roles') ||
+      path.startsWith('/teams')) {
     return Permissions.canBrowseReferenceData(role);
   }
   if (path.endsWith('/new') || path.endsWith('/edit')) {

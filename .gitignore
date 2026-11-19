@@ -35,4 +35,7 @@ app.*.map.json
 
 .widget_preview/
 
-mock-server/node_modules/
+pocketbase/pocketbase
+pocketbase/pocketbase.exe
+pocketbase/pb_data/
+pocketbase/pb_migrations/

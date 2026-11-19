@@ -16,8 +16,8 @@ import '../widgets/state_views.dart';
 class BuildFormScreen extends StatefulWidget {
   const BuildFormScreen({super.key, this.id});
 
-  final int? id;
-  bool get isEditing => id != null;
+  final String? id;
+  bool get isEditing => id != null && id!.isNotEmpty;
 
   @override
   State<BuildFormScreen> createState() => _BuildFormScreenState();
@@ -91,7 +91,7 @@ class _BuildFormState extends State<_BuildForm> {
   final _formKey = GlobalKey<EntityFormState>();
   late List<ProPlayer> _proPlayers = widget.data.proPlayers;
   late List<Role> _roles = widget.data.roles;
-  int? _lastHeroId;
+  String? _lastHeroId;
 
   Map<String, dynamic> get _initial {
     final b = widget.data.build;
@@ -102,16 +102,16 @@ class _BuildFormState extends State<_BuildForm> {
       'difficulty': '${b?.difficulty ?? 3}',
       'heroId':
           b?.heroId ??
-          (widget.data.heroes.isNotEmpty ? widget.data.heroes.first.id : null),
-      'proPlayerIds': List<int>.from(b?.proPlayerIds ?? const []),
-      'roleIds': List<int>.from(b?.roleIds ?? const []),
+          (widget.data.heroes.isNotEmpty ? widget.data.heroes.first.id : ''),
+      'proPlayerIds': List<String>.from(b?.proPlayerIds ?? const []),
+      'roleIds': List<String>.from(b?.roleIds ?? const []),
       'picks': '${b?.picks ?? 0}',
       'wins': '${b?.wins ?? 0}',
     };
   }
 
-  Future<void> _applyCascade(int? heroId) async {
-    if (heroId == null || heroId == _lastHeroId) return;
+  Future<void> _applyCascade(String? heroId) async {
+    if (heroId == null || heroId.isEmpty || heroId == _lastHeroId) return;
     _lastHeroId = heroId;
     final builds = context.read<BuildRepository>();
     final proIds = await builds.proPlayerIdsLinkedToHero(heroId);
@@ -133,7 +133,7 @@ class _BuildFormState extends State<_BuildForm> {
   @override
   void initState() {
     super.initState();
-    final heroId = _initial['heroId'] as int?;
+    final heroId = _initial['heroId'] as String?;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _applyCascade(heroId);
     });
@@ -146,7 +146,7 @@ class _BuildFormState extends State<_BuildForm> {
       title: widget.isEditing ? 'Редактирование сборки' : 'Новая сборка',
       initialValues: _initial,
       onChanged: (values) {
-        final heroId = values['heroId'] as int?;
+        final heroId = values['heroId'] as String?;
         _applyCascade(heroId);
       },
       fields: [
@@ -176,7 +176,10 @@ class _BuildFormState extends State<_BuildForm> {
           type: EntityFieldType.dropdown,
           dropdownItems: () => [
             for (final h in widget.data.heroes)
-              DropdownMenuItem(value: h.id, child: Text(h.name)),
+              DropdownMenuItem<String>(
+                value: h.id,
+                child: Text(h.name),
+              ),
           ],
         ),
         EntityFieldSpec(
@@ -207,16 +210,18 @@ class _BuildFormState extends State<_BuildForm> {
       onSubmit: (values) async {
         final builds = context.read<BuildRepository>();
         final build = Build(
-          id: widget.data.build?.id ?? 0,
+          id: widget.data.build?.id ?? '',
           title: '${values['title']}'.trim(),
           code: '${values['code']}'.trim(),
           patch: '${values['patch']}'.trim(),
           difficulty: int.tryParse('${values['difficulty']}'.trim()) ?? 0,
-          heroId: values['heroId'] as int? ?? 0,
-          proPlayerIds: List<int>.from(
+          heroId: '${values['heroId'] ?? ''}',
+          proPlayerIds: List<String>.from(
             (values['proPlayerIds'] as List?) ?? const [],
-          ),
-          roleIds: List<int>.from((values['roleIds'] as List?) ?? const []),
+          ).map((e) => '$e').toList(),
+          roleIds: List<String>.from(
+            (values['roleIds'] as List?) ?? const [],
+          ).map((e) => '$e').toList(),
           picks: int.tryParse('${values['picks']}'.trim()) ?? -1,
           wins: int.tryParse('${values['wins']}'.trim()) ?? -1,
           deletedAt: widget.data.build?.deletedAt,

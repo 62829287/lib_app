@@ -4,9 +4,11 @@ import '../core/api_exceptions.dart';
 import '../models/dota_hero.dart';
 import '../models/pro_player.dart';
 import '../models/role.dart';
+import '../models/team.dart';
 import '../repositories/hero_repository.dart';
 import '../repositories/pro_player_repository.dart';
 import '../repositories/role_repository.dart';
+import '../repositories/team_repository.dart';
 import 'load_status.dart';
 
 class CatalogNotifier extends ChangeNotifier {
@@ -14,17 +16,21 @@ class CatalogNotifier extends ChangeNotifier {
     required RoleRepository roles,
     required HeroRepository heroes,
     required ProPlayerRepository proPlayers,
+    required TeamRepository teams,
   }) : _rolesRepo = roles,
        _heroesRepo = heroes,
-       _proPlayersRepo = proPlayers;
+       _proPlayersRepo = proPlayers,
+       _teamsRepo = teams;
 
   final RoleRepository _rolesRepo;
   final HeroRepository _heroesRepo;
   final ProPlayerRepository _proPlayersRepo;
+  final TeamRepository _teamsRepo;
 
   LoadStatus _status = LoadStatus.idle;
   List<Role> _roles = const [];
   List<DotaHero> _heroes = const [];
+  List<Team> _teams = const [];
   List<String> _countries = const [];
   String? _error;
   bool _recoveryAttempted = false;
@@ -33,20 +39,29 @@ class CatalogNotifier extends ChangeNotifier {
   LoadStatus get status => _status;
   List<Role> get roles => _roles;
   List<DotaHero> get heroes => _heroes;
+  List<Team> get teams => _teams;
   List<String> get countries => _countries;
   String? get error => _error;
-  bool get hasData => _roles.isNotEmpty || _heroes.isNotEmpty;
+  bool get hasData =>
+      _roles.isNotEmpty || _heroes.isNotEmpty || _teams.isNotEmpty;
 
-  String roleName(int id) {
+  String roleName(String id) {
     for (final r in _roles) {
       if (r.id == id) return r.name;
     }
     return '#$id';
   }
 
-  String heroName(int id) {
+  String heroName(String id) {
     for (final h in _heroes) {
       if (h.id == id) return h.name;
+    }
+    return '#$id';
+  }
+
+  String teamName(String id) {
+    for (final t in _teams) {
+      if (t.id == id) return t.name;
     }
     return '#$id';
   }
@@ -68,16 +83,19 @@ class CatalogNotifier extends ChangeNotifier {
     _rolesRepo.invalidateCatalogCache();
     _heroesRepo.invalidateCatalogCache();
     _proPlayersRepo.invalidateCatalogCache();
+    _teamsRepo.invalidateCatalogCache();
 
     try {
       final results = await Future.wait([
         _rolesRepo.allActive(),
         _heroesRepo.allActive(),
         _proPlayersRepo.allActive(),
+        _teamsRepo.allActive(),
       ]);
       _roles = results[0] as List<Role>;
       _heroes = results[1] as List<DotaHero>;
       final players = results[2] as List<ProPlayer>;
+      _teams = results[3] as List<Team>;
       _countries = players.map((p) => p.country).toSet().toList()..sort();
       _status = LoadStatus.success;
       _recoveryAttempted = false;

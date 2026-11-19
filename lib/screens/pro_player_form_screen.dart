@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/pro_player.dart';
 import '../repositories/pro_player_repository.dart';
+import '../state/catalog_notifier.dart';
 import '../state/pro_player_list_notifier.dart';
 import '../widgets/entity_form.dart';
 import '../widgets/state_views.dart';
@@ -10,8 +11,8 @@ import '../widgets/state_views.dart';
 class ProPlayerFormScreen extends StatefulWidget {
   const ProPlayerFormScreen({super.key, this.id});
 
-  final int? id;
-  bool get isEditing => id != null;
+  final String? id;
+  bool get isEditing => id != null && id!.isNotEmpty;
 
   @override
   State<ProPlayerFormScreen> createState() => _ProPlayerFormScreenState();
@@ -26,10 +27,13 @@ class _ProPlayerFormScreenState extends State<ProPlayerFormScreen> {
     _future ??= widget.isEditing
         ? context.read<ProPlayerRepository>().findById(widget.id!)
         : Future.value(null);
+    context.read<CatalogNotifier>().recoverIfNeeded();
   }
 
   @override
   Widget build(BuildContext context) {
+    final catalog = context.watch<CatalogNotifier>();
+
     return FutureBuilder<ProPlayer?>(
       future: _future,
       builder: (context, snap) {
@@ -40,6 +44,7 @@ class _ProPlayerFormScreenState extends State<ProPlayerFormScreen> {
           return const EmptyView(message: 'Про-игрок не найден');
         }
         final p = snap.data;
+        final teams = catalog.teams;
         return EntityForm(
           title: widget.isEditing
               ? 'Редактирование про-игрока'
@@ -47,32 +52,43 @@ class _ProPlayerFormScreenState extends State<ProPlayerFormScreen> {
           initialValues: {
             'nickname': p?.nickname ?? '',
             'realName': p?.realName ?? '',
-            'team': p?.team ?? '',
+            'teamId': p?.teamId ?? '',
             'rating': '${p?.rating ?? 1000}',
             'country': p?.country ?? 'Россия',
           },
-          fields: const [
-            EntityFieldSpec(
+          fields: [
+            const EntityFieldSpec(
               key: 'nickname',
               label: 'Ник',
               type: EntityFieldType.text,
             ),
-            EntityFieldSpec(
+            const EntityFieldSpec(
               key: 'realName',
               label: 'Настоящее имя',
               type: EntityFieldType.text,
             ),
             EntityFieldSpec(
-              key: 'team',
+              key: 'teamId',
               label: 'Команда',
-              type: EntityFieldType.text,
+              type: EntityFieldType.dropdown,
+              dropdownItems: () => [
+                const DropdownMenuItem<String>(
+                  value: '',
+                  child: Text('— без команды —'),
+                ),
+                for (final t in teams)
+                  DropdownMenuItem<String>(
+                    value: t.id,
+                    child: Text(t.displayName),
+                  ),
+              ],
             ),
-            EntityFieldSpec(
+            const EntityFieldSpec(
               key: 'rating',
               label: 'Рейтинг',
               type: EntityFieldType.number,
             ),
-            EntityFieldSpec(
+            const EntityFieldSpec(
               key: 'country',
               label: 'Страна',
               type: EntityFieldType.text,
@@ -81,10 +97,10 @@ class _ProPlayerFormScreenState extends State<ProPlayerFormScreen> {
           onSubmit: (values) async {
             final repo = context.read<ProPlayerRepository>();
             final player = ProPlayer(
-              id: p?.id ?? 0,
+              id: p?.id ?? '',
               nickname: '${values['nickname']}'.trim(),
               realName: '${values['realName']}'.trim(),
-              team: '${values['team']}'.trim(),
+              teamId: '${values['teamId'] ?? ''}'.trim(),
               rating: int.tryParse('${values['rating']}'.trim()) ?? -1,
               country: '${values['country']}'.trim(),
               deletedAt: p?.deletedAt,

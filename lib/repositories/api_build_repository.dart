@@ -1,184 +1,190 @@
 import 'package:dio/dio.dart';
 
 import '../core/api_client.dart';
-import '../core/api_exceptions.dart';
+import '../core/pb.dart';
 import '../models/build.dart';
 import '../models/build_query.dart';
 import '../models/page_result.dart';
 import 'build_repository.dart';
+import 'pb_crud.dart';
 
-class ApiBuildRepository implements BuildRepository {
+class ApiBuildRepository with PbCrudMixin implements BuildRepository {
   ApiBuildRepository(this._dio);
 
   final Dio _dio;
   CancelToken? _findToken;
 
   @override
+  Dio get dio => _dio;
+
+  @override
+  String get collection => 'builds';
+
+  @override
   Future<PageResult<Build>> find(BuildQuery q) {
     _findToken?.cancel('stale');
     final token = CancelToken();
     _findToken = token;
-
     return guardRead(() async {
+      final parts = <String>[];
+      if (!q.includeDeleted) {
+        parts.add('(deletedAt = "" || deletedAt = null)');
+      }
+      final search = q.search.trim();
+      if (search.isNotEmpty) {
+        final safe = search.replaceAll('"', '');
+        parts.add('(title ~ "$safe" || code ~ "$safe")');
+      }
+      if (q.heroId != null && q.heroId!.isNotEmpty) {
+        parts.add('heroId = "${q.heroId}"');
+      }
+      if (q.roleId != null && q.roleId!.isNotEmpty) {
+        parts.add('roleIds.id ?= "${q.roleId}"');
+      }
+      if (q.proPlayerId != null && q.proPlayerId!.isNotEmpty) {
+        parts.add('proPlayerIds.id ?= "${q.proPlayerId}"');
+      }
+      if (q.difficultyFrom != null) {
+        parts.add('difficulty >= ${q.difficultyFrom}');
+      }
+      if (q.difficultyTo != null) {
+        parts.add('difficulty <= ${q.difficultyTo}');
+      }
+      final filter = parts.isEmpty ? null : parts.join(' && ');
       final response = await _dio.get<Map<String, dynamic>>(
-        '/builds',
+        pbRecords(collection),
         queryParameters: {
-          if (q.search.trim().isNotEmpty) 'search': q.search.trim(),
-          if (q.roleId != null) 'roleId': q.roleId,
-          if (q.heroId != null) 'heroId': q.heroId,
-          if (q.proPlayerId != null) 'proPlayerId': q.proPlayerId,
-          if (q.difficultyFrom != null) 'difficultyFrom': q.difficultyFrom,
-          if (q.difficultyTo != null) 'difficultyTo': q.difficultyTo,
-          'sort': '${q.sortField},${q.sortAscending ? 'asc' : 'desc'}',
           'page': q.page,
-          'size': q.size,
-          if (q.includeDeleted) 'includeDeleted': true,
+          'perPage': q.size,
+          'sort': pbSort(q.sortField, q.sortAscending),
+          if (filter != null) 'filter': filter,
         },
         cancelToken: token,
       );
-
-      final data = response.data!;
-      return PageResult(
-        items: (data['items'] as List? ?? const [])
-            .whereType<Map>()
-            .map((e) => Build.fromJson(Map<String, dynamic>.from(e)))
-            .toList(),
-        page: (data['page'] as num?)?.toInt() ?? 1,
-        size: (data['size'] as num?)?.toInt() ?? q.size,
-        total: (data['total'] as num?)?.toInt() ?? 0,
+      return pbPageResult(
+        response.data!,
+        Build.fromJson,
+        fallbackPage: q.page,
+        fallbackSize: q.size,
       );
     });
   }
 
   @override
-  Future<Build?> findById(int id) => guardRead(() async {
-    try {
-      final response = await _dio.get<Map<String, dynamic>>('/builds/$id');
-      return Build.fromJson(response.data!);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404 || e.error is NotFoundException) {
-        return null;
-      }
-      rethrow;
-    }
-  });
+  Future<Build?> findById(String id) => pbFindById(id, Build.fromJson);
 
   @override
   Future<Build> create(Build build) => guard(() async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '/builds',
-      data: {
-        'title': build.title,
-        'code': build.code,
-        'patch': build.patch,
-        'difficulty': build.difficulty,
-        'heroId': build.heroId,
-        'proPlayerIds': build.proPlayerIds,
-        'roleIds': build.roleIds,
-        'picks': build.picks,
-        'wins': build.wins,
-      },
+      pbRecords(collection),
+      data: _body(build),
     );
     return Build.fromJson(response.data!);
   });
 
   @override
   Future<Build> update(Build build) => guard(() async {
-    final response = await _dio.put<Map<String, dynamic>>(
-      '/builds/${build.id}',
-      data: {
-        'title': build.title,
-        'code': build.code,
-        'patch': build.patch,
-        'difficulty': build.difficulty,
-        'heroId': build.heroId,
-        'proPlayerIds': build.proPlayerIds,
-        'roleIds': build.roleIds,
-        'picks': build.picks,
-        'wins': build.wins,
-      },
+    final response = await _dio.patch<Map<String, dynamic>>(
+      pbRecord(collection, build.id),
+      data: _body(build),
     );
     return Build.fromJson(response.data!);
   });
 
-  @override
-  Future<void> softDelete(int id) => guard(() => _dio.delete('/builds/$id'));
+  Map<String, dynamic> _body(Build build) => {
+    'title': build.title,
+    'code': build.code,
+    'patch': build.patch,
+    'difficulty': build.difficulty,
+    'heroId': build.heroId,
+    'proPlayerIds': build.proPlayerIds,
+    'roleIds': build.roleIds,
+    'picks': build.picks,
+    'wins': build.wins,
+  };
 
   @override
-  Future<void> hardDelete(int id) =>
-      guard(() => _dio.delete('/builds/$id', queryParameters: {'hard': true}));
+  Future<void> softDelete(String id) => pbSoftDelete(id);
 
   @override
-  Future<void> restore(int id) => guard(() => _dio.post('/builds/$id/restore'));
+  Future<void> hardDelete(String id) => pbHardDelete(id);
 
   @override
-  Future<int> softDeleteMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/builds/bulk-delete',
-      data: {'ids': ids},
-    );
-    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-  });
+  Future<void> restore(String id) => pbRestore(id);
 
   @override
-  Future<int> hardDeleteMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/builds/bulk-delete',
-      data: {'ids': ids, 'hard': true},
-    );
-    return (response.data?['deleted'] as num?)?.toInt() ?? 0;
-  });
+  Future<int> softDeleteMany(List<String> ids) => pbSoftDeleteMany(ids);
 
   @override
-  Future<int> restoreMany(List<int> ids) => guard(() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      '/builds/bulk-restore',
-      data: {'ids': ids},
-    );
-    return (response.data?['restored'] as num?)?.toInt() ?? 0;
-  });
+  Future<int> hardDeleteMany(List<String> ids) => pbHardDeleteMany(ids);
 
   @override
-  Future<bool> codeExists(String code, {int? excludingId}) =>
+  Future<int> restoreMany(List<String> ids) => pbRestoreMany(ids);
+
+  @override
+  Future<bool> codeExists(String code, {String? excludingId}) =>
       guardRead(() async {
+        final safe = code.replaceAll('"', '');
+        var filter = 'code = "$safe"';
+        if (excludingId != null && excludingId.isNotEmpty) {
+          filter += ' && id != "$excludingId"';
+        }
         final response = await _dio.get<Map<String, dynamic>>(
-          '/builds/code-exists',
-          queryParameters: {'code': code, 'excludingId': ?excludingId},
+          pbRecords(collection),
+          queryParameters: {'perPage': 1, 'filter': filter},
         );
-        return response.data?['exists'] == true;
+        return ((response.data?['totalItems'] as num?)?.toInt() ?? 0) > 0;
       });
 
   @override
-  Future<int> countByHero(int heroId) => guardRead(() async {
+  Future<int> countByHero(String heroId) => guardRead(() async {
     final response = await _dio.get<Map<String, dynamic>>(
-      '/builds/count-by-hero/$heroId',
+      pbRecords(collection),
+      queryParameters: {
+        'perPage': 1,
+        'filter': 'heroId = "$heroId"',
+      },
     );
-    return (response.data?['count'] as num?)?.toInt() ?? 0;
+    return (response.data?['totalItems'] as num?)?.toInt() ?? 0;
   });
 
   @override
-  Future<List<int>> proPlayerIdsLinkedToHero(int heroId) => guardRead(() async {
-    final response = await _dio.get<Map<String, dynamic>>(
-      '/builds/links-by-hero/$heroId',
-    );
-    final list = response.data?['proPlayerIds'];
-    if (list is! List) return const [];
-    return list
-        .map((e) => e is num ? e.toInt() : int.tryParse('$e'))
-        .whereType<int>()
-        .toList();
-  });
+  Future<List<String>> proPlayerIdsLinkedToHero(String heroId) =>
+      guardRead(() async {
+        final response = await _dio.get<Map<String, dynamic>>(
+          pbRecords(collection),
+          queryParameters: {
+            'perPage': 200,
+            'filter': 'heroId = "$heroId"',
+            'fields': 'proPlayerIds',
+          },
+        );
+        final ids = <String>{};
+        for (final item in (response.data?['items'] as List? ?? const [])) {
+          if (item is Map) {
+            ids.addAll(pbIdList(item['proPlayerIds']));
+          }
+        }
+        return ids.toList();
+      });
 
   @override
-  Future<List<int>> roleIdsLinkedToHero(int heroId) => guardRead(() async {
-    final response = await _dio.get<Map<String, dynamic>>(
-      '/builds/links-by-hero/$heroId',
-    );
-    final list = response.data?['roleIds'];
-    if (list is! List) return const [];
-    return list
-        .map((e) => e is num ? e.toInt() : int.tryParse('$e'))
-        .whereType<int>()
-        .toList();
-  });
+  Future<List<String>> roleIdsLinkedToHero(String heroId) =>
+      guardRead(() async {
+        final response = await _dio.get<Map<String, dynamic>>(
+          pbRecords(collection),
+          queryParameters: {
+            'perPage': 200,
+            'filter': 'heroId = "$heroId"',
+            'fields': 'roleIds',
+          },
+        );
+        final ids = <String>{};
+        for (final item in (response.data?['items'] as List? ?? const [])) {
+          if (item is Map) {
+            ids.addAll(pbIdList(item['roleIds']));
+          }
+        }
+        return ids.toList();
+      });
 }
